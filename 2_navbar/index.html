@@ -85,7 +85,7 @@
       }
     });
 
-    // Gamepad support
+    // Enhanced Gamepad support
     function handleGamepadInput() {
       const gamepads = navigator.getGamepads();
       if (!gamepads) return;
@@ -100,6 +100,8 @@
       } else if (gp.axes[0] < -0.5) { // Left movement
         selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
         renderNav();
+      } else if (gp.axes[1] > 0.5 || gp.axes[1] < -0.5) {
+        // Vertical movement ignored for navigation
       }
 
       // Check buttons for D-pad movement
@@ -110,7 +112,6 @@
         selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
         renderNav();
       } else if (gp.buttons[0]?.pressed) { // A button
-        e.preventDefault(); // Prevent zoom control
         selectTab(selectedIndex);
       }
     }
