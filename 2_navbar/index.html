@@ -5,42 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ROG Ally Demo</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    #content {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      color: #eee;
-    }
-    /* Top nav inside app-container */
-    #top-nav {
-      display: flex;
-      justify-content: center;   /* center horizontally */
-      gap: 12px;
-      background: #14141a;
-      border-bottom: 1px solid #333;
-      border-radius: 0 0 8px 8px;
-      padding: 6px 8px;
-      margin-bottom: 12px;       /* space below nav */
-    }
-    .nav-item {
-      background: none;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-    }
-    .nav-item img {
-      width: 40px;
-      height: 40px;
-      display: block;
-    }
-    .nav-item.is-selected img {
-      outline: 2px solid #6ee7ff;
-      border-radius: 8px;
-    }
-  </style>
 </head>
 <body>
   <div id="app">
@@ -48,11 +12,12 @@
       <div id="windows-shell">
         <div id="app-container">
           
-          <!-- Top Navigation -->
+          <!-- Top Navigation (inside app-container) -->
           <nav id="top-nav"></nav>
           
           <!-- App Content -->
           <main id="content">Games</main>
+
         </div>
       </div>
     </div>
@@ -71,11 +36,11 @@
       nav.innerHTML = "";
       tabs.forEach((tab, i) => {
         const btn = document.createElement("button");
-        btn.className = "nav-item" + (i === selectedIndex ? " is-selected" : "");
+        btn.className = "nav-item" + (i === selectedIndex ? " is-active" : "");
         btn.dataset.index = i;
 
         // Choose correct image
-        const state = (i === selectedIndex) ? "select" : "default";
+        const state = (i === selectedIndex) ? "active" : "default";
         const img = document.createElement("img");
         img.src = `assets/nav/${tab}_${state}.png`;
         img.alt = tab;
@@ -85,17 +50,19 @@
           img.src = `assets/nav/${tab}_active.png`;
         });
         btn.addEventListener("mouseleave", () => {
-          img.src = `assets/nav/${tab}_${i === selectedIndex ? "select" : "default"}.png`;
+          img.src = `assets/nav/${tab}_${i === selectedIndex ? "active" : "default"}.png`;
         });
         btn.addEventListener("click", () => selectTab(i));
 
         nav.appendChild(btn);
       });
+
+      // Update content immediately
+      content.textContent = tabs[selectedIndex].charAt(0).toUpperCase() + tabs[selectedIndex].slice(1);
     }
 
     function selectTab(i) {
       selectedIndex = i;
-      content.textContent = tabs[i].charAt(0).toUpperCase() + tabs[i].slice(1);
       renderNav();
     }
 
@@ -123,4 +90,3 @@
   <script src="main.js"></script>
 </body>
 </html>
-

@@ -32,13 +32,15 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    background: url('assets/bg/halo.png') no-repeat center center;
+    background-size: cover; /* Ensure it fills the entire 1280x720 space */
 }
 
 #windows-shell {
     width: 100%;
     height: 100%;
     position: relative;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: transparent; /* Remove dark background */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -64,8 +66,6 @@ body {
 #app-container.scaled {
     transform: scale(0.5);
 }
-
-
 
 /* Main Layout - Optimized for 1280x720 */
 main {
@@ -348,4 +348,66 @@ main::-webkit-scrollbar-thumb {
 
 main::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
+}
+
+/* ───────────────────────────────────────────── */
+/* TOP NAV INSIDE APP CONTAINER (added)         */
+/* ───────────────────────────────────────────── */
+
+#app-container {
+    /* make the app container own the vertical layout */
+    display: flex;
+    flex-direction: column;   /* nav on top, content below */
+    align-items: center;      /* center the nav block */
+    justify-content: flex-start;
+}
+
+#top-nav {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    border-bottom: 1px solid #333;
+    border-radius: 0 0 8px 8px;
+    padding: 8px 12px;
+    width: max-content;       /* shrink to icons */
+    margin: 0 auto 8px;       /* center within app container */
+    z-index: 1;               /* keep above content if overlapping */
+    position: relative;
+    top: 64px; /* Move down 64px from the top */
+}
+
+#top-nav .nav-item {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+#top-nav .nav-item img {
+    width: 40px;
+    height: 40px;
+    display: block;
+}
+
+#top-nav .nav-item.is-selected img {
+    outline: 2px solid #6ee7ff;
+    border-radius: 8px;
+}
+
+/* Ensure the main content fills remaining app space */
+#content {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #eee;
+}
+
+/* Updated styles for the navigation bar */
+.navbar {
+    background: transparent !important; /* Ensure no background */
+    border: none !important; /* Ensure no border */
 }
