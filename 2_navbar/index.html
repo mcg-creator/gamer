@@ -78,8 +78,45 @@
         e.preventDefault();
       } else if (e.key === "Enter") {
         selectTab(selectedIndex);
+      } 
+      // Remove zoom control on 'D' key or 'A' button press
+      else if (e.key === "d") {
+        e.preventDefault(); // Prevent zoom control
       }
     });
+
+    // Gamepad support
+    function handleGamepadInput() {
+      const gamepads = navigator.getGamepads();
+      if (!gamepads) return;
+
+      const gp = gamepads[0]; // Assume single controller for simplicity
+      if (!gp) return;
+
+      // Check axes for joystick movement
+      if (gp.axes[0] > 0.5) { // Right movement
+        selectedIndex = (selectedIndex + 1) % tabs.length;
+        renderNav();
+      } else if (gp.axes[0] < -0.5) { // Left movement
+        selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+        renderNav();
+      }
+
+      // Check buttons for D-pad movement
+      if (gp.buttons[15]?.pressed) { // D-pad right
+        selectedIndex = (selectedIndex + 1) % tabs.length;
+        renderNav();
+      } else if (gp.buttons[14]?.pressed) { // D-pad left
+        selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+        renderNav();
+      } else if (gp.buttons[0]?.pressed) { // A button
+        e.preventDefault(); // Prevent zoom control
+        selectTab(selectedIndex);
+      }
+    }
+
+    // Poll gamepad input
+    setInterval(handleGamepadInput, 100);
 
     renderNav();
   </script>

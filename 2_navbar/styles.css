@@ -51,20 +51,14 @@ body {
     height: 720px;
     background-color: transparent;
     position: relative;
-    transform: scale(1);
-    transition: transform 0.3s ease-in-out;
-    will-change: transform;
+    transform: none; /* Disable scaling */
+    transition: none; /* Disable transition */
+    will-change: auto; /* Reset will-change property */
 }
 
 #app-container.scaled {
-    transform: scale(0.5);
-    transition: transform 0.3s ease;
-    transform-origin: center center;
-    transform: scale(1);
-}
-
-#app-container.scaled {
-    transform: scale(0.5);
+    transform: none; /* Disable scaling */
+    transition: none; /* Disable transition */
 }
 
 /* Main Layout - Optimized for 1280x720 */
@@ -375,6 +369,9 @@ main::-webkit-scrollbar-thumb:hover {
     z-index: 1;               /* keep above content if overlapping */
     position: relative;
     top: 64px; /* Move down 64px from the top */
+    outline: none; /* Remove any outline */
+    box-shadow: none; /* Remove any shadow */
+    border: none; /* Remove any border */
 }
 
 #top-nav .nav-item {
@@ -382,6 +379,7 @@ main::-webkit-scrollbar-thumb:hover {
     border: none;
     padding: 0;
     cursor: pointer;
+    margin: 0 8px; /* Reduce padding to 8px between each item */
 }
 
 #top-nav .nav-item img {
