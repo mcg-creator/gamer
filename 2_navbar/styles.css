@@ -34,6 +34,7 @@ body {
     align-items: center;
     background: url('assets/bg/halo.png') no-repeat center center;
     background-size: cover; /* Ensure it fills the entire 1280x720 space */
+    overflow: visible; /* Ensure content is not clipped */
 }
 
 #windows-shell {
@@ -54,6 +55,10 @@ body {
     transform: none; /* Disable scaling */
     transition: none; /* Disable transition */
     will-change: auto; /* Reset will-change property */
+    display: flex;
+    flex-direction: column;   /* nav on top, content below */
+    align-items: center;      /* center the nav block */
+    justify-content: flex-start;
 }
 
 #app-container.scaled {
@@ -367,8 +372,10 @@ main::-webkit-scrollbar-thumb:hover {
     width: max-content;       /* shrink to icons */
     margin: 0 auto 8px;       /* center within app container */
     z-index: 1;               /* keep above content if overlapping */
-    position: relative;
+    position: absolute;
     top: 64px; /* Move down 64px from the top */
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
     outline: none; /* Remove any outline */
     box-shadow: none; /* Remove any shadow */
     border: none; /* Remove any border */
