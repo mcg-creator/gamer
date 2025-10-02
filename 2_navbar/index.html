@@ -1,0 +1,126 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROG Ally Demo</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    #content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: #eee;
+    }
+    /* Top nav inside app-container */
+    #top-nav {
+      display: flex;
+      justify-content: center;   /* center horizontally */
+      gap: 12px;
+      background: #14141a;
+      border-bottom: 1px solid #333;
+      border-radius: 0 0 8px 8px;
+      padding: 6px 8px;
+      margin-bottom: 12px;       /* space below nav */
+    }
+    .nav-item {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    .nav-item img {
+      width: 40px;
+      height: 40px;
+      display: block;
+    }
+    .nav-item.is-selected img {
+      outline: 2px solid #6ee7ff;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="game-container">
+      <div id="windows-shell">
+        <div id="app-container">
+          
+          <!-- Top Navigation -->
+          <nav id="top-nav"></nav>
+          
+          <!-- App Content -->
+          <main id="content">Games</main>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const tabs = [
+      "games", "apps", "friends", "gallery", "notifications", "settings", "copilot"
+    ];
+
+    let selectedIndex = 0;
+    const nav = document.getElementById("top-nav");
+    const content = document.getElementById("content");
+
+    function renderNav() {
+      nav.innerHTML = "";
+      tabs.forEach((tab, i) => {
+        const btn = document.createElement("button");
+        btn.className = "nav-item" + (i === selectedIndex ? " is-selected" : "");
+        btn.dataset.index = i;
+
+        // Choose correct image
+        const state = (i === selectedIndex) ? "select" : "default";
+        const img = document.createElement("img");
+        img.src = `assets/nav/${tab}_${state}.png`;
+        img.alt = tab;
+        btn.appendChild(img);
+
+        btn.addEventListener("mouseenter", () => {
+          img.src = `assets/nav/${tab}_active.png`;
+        });
+        btn.addEventListener("mouseleave", () => {
+          img.src = `assets/nav/${tab}_${i === selectedIndex ? "select" : "default"}.png`;
+        });
+        btn.addEventListener("click", () => selectTab(i));
+
+        nav.appendChild(btn);
+      });
+    }
+
+    function selectTab(i) {
+      selectedIndex = i;
+      content.textContent = tabs[i].charAt(0).toUpperCase() + tabs[i].slice(1);
+      renderNav();
+    }
+
+    // Keyboard support
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") {
+        selectedIndex = (selectedIndex + 1) % tabs.length;
+        renderNav();
+        e.preventDefault();
+      } else if (e.key === "ArrowLeft") {
+        selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+        renderNav();
+        e.preventDefault();
+      } else if (e.key === "Enter") {
+        selectTab(selectedIndex);
+      }
+    });
+
+    renderNav();
+  </script>
+
+  <script src="gamepad.js"></script>
+  <script src="keyboard.js"></script>
+  <script src="input.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
+
