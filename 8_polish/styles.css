@@ -493,7 +493,7 @@ main::-webkit-scrollbar-thumb:hover {
     align-items: center;
     justify-content: center;
     background: transparent;
-    transform: translateY(35px);
+    transform: translateY(30px);
     transition: opacity 0.3s ease; /* Smooth focus transition */
 }
 
