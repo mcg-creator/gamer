@@ -1,0 +1,285 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROG Ally Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <div id="game-container">
+      <div id="windows-shell">
+        <div id="app-container">
+          
+          <!-- Top Navigation (inside app-container) -->
+          <nav id="top-nav"></nav>
+          
+          <!-- App Content -->
+          <main id="content">
+            <!-- Games Carousel -->
+            <div id="games-carousel" class="carousel-container" style="display: none;">
+              <div class="carousel-wrapper">
+                <div class="carousel-track">
+                  <div class="game-card" data-game="halo">
+                    <img src="assets/games/halo.png" alt="Halo" class="game-image">
+                  </div>
+                  <div class="game-card" data-game="spiderman">
+                    <img src="assets/games/spiderman.png" alt="Spider-Man" class="game-image">
+                  </div>
+                  <div class="game-card" data-game="starfield">
+                    <img src="assets/games/starfield.png" alt="Starfield" class="game-image">
+                  </div>
+                  <div class="game-card" data-game="sea_of_thieves">
+                    <img src="assets/games/sea_of_thieves.png" alt="Sea of Thieves" class="game-image">
+                  </div>
+                  <div class="game-card" data-game="rainworld">
+                    <img src="assets/games/rainworld.png" alt="Rain World" class="game-image">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Default Content for Other Tabs -->
+            <div id="default-content">Games</div>
+          </main>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Game carousel data and state
+    const games = [
+      { id: "halo", title: "Halo", subtitle: "The Master Chief Collection" },
+      { id: "spiderman", title: "Spider-Man", subtitle: "Miles Morales" },
+      { id: "starfield", title: "Starfield", subtitle: "Space Adventure" },
+      { id: "sea_of_thieves", title: "Sea of Thieves", subtitle: "Pirate Adventure" },
+      { id: "rainworld", title: "Rain World", subtitle: "Survival Platformer" }
+    ];
+
+    let currentGameIndex = 0;
+    
+    function updateCarousel() {
+      const gameCards = document.querySelectorAll('.game-card');
+      const totalGames = gameCards.length;
+      
+      gameCards.forEach((card, index) => {
+        // Remove all position classes
+        card.classList.remove('center', 'left', 'right', 'hidden');
+        
+        if (index === currentGameIndex) {
+          card.classList.add('center');
+        } else if (index === (currentGameIndex - 1 + totalGames) % totalGames) {
+          card.classList.add('left');
+        } else if (index === (currentGameIndex + 1) % totalGames) {
+          card.classList.add('right');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function navigateCarousel(direction) {
+      const totalGames = games.length;
+      if (direction === 'right') {
+        currentGameIndex = (currentGameIndex + 1) % totalGames;
+      } else if (direction === 'left') {
+        currentGameIndex = (currentGameIndex - 1 + totalGames) % totalGames;
+      }
+      updateCarousel();
+    }
+
+    // Navigation tabs logic
+    const tabs = [
+      "games", "apps", "friends", "gallery", "notifications", "settings", "copilot"
+    ];
+
+    let selectedIndex = 0;
+    const nav = document.getElementById("top-nav");
+    const content = document.getElementById("content");
+    const gamesCarousel = document.getElementById("games-carousel");
+    const defaultContent = document.getElementById("default-content");
+
+    function renderNav() {
+      nav.innerHTML = "";
+      tabs.forEach((tab, i) => {
+        const btn = document.createElement("button");
+        btn.className = "nav-item" + (i === selectedIndex ? " is-active" : "");
+        btn.dataset.index = i;
+
+        // Choose correct image
+        const state = (i === selectedIndex) ? "active" : "default";
+        const img = document.createElement("img");
+        img.src = `assets/nav/${tab}_${state}.png`;
+        img.alt = tab;
+        btn.appendChild(img);
+
+        btn.addEventListener("mouseenter", () => {
+          img.src = `assets/nav/${tab}_active.png`;
+        });
+        btn.addEventListener("mouseleave", () => {
+          img.src = `assets/nav/${tab}_${i === selectedIndex ? "active" : "default"}.png`;
+        });
+        btn.addEventListener("click", () => selectTab(i));
+
+        nav.appendChild(btn);
+      });
+
+      // Update content based on selected tab
+      updateContent();
+    }
+
+    function updateContent() {
+      if (tabs[selectedIndex] === "games") {
+        gamesCarousel.style.display = "flex";
+        defaultContent.style.display = "none";
+        updateCarousel();
+      } else {
+        gamesCarousel.style.display = "none";
+        defaultContent.style.display = "flex";
+        defaultContent.textContent = tabs[selectedIndex].charAt(0).toUpperCase() + tabs[selectedIndex].slice(1);
+      }
+    }
+
+    function selectTab(i) {
+      selectedIndex = i;
+      renderNav();
+    }
+
+    // Enhanced keyboard support
+    document.addEventListener("keydown", (e) => {
+      if (tabs[selectedIndex] === "games") {
+        // When in games tab, arrow keys control carousel
+        if (e.key === "ArrowRight") {
+          navigateCarousel('right');
+          e.preventDefault();
+        } else if (e.key === "ArrowLeft") {
+          navigateCarousel('left');
+          e.preventDefault();
+        } else if (e.key === "ArrowUp") {
+          // Switch to previous tab
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+          e.preventDefault();
+        } else if (e.key === "ArrowDown") {
+          // Switch to next tab
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+          e.preventDefault();
+        }
+      } else {
+        // In other tabs, arrow keys control tab navigation
+        if (e.key === "ArrowRight") {
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+          e.preventDefault();
+        } else if (e.key === "ArrowLeft") {
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+          e.preventDefault();
+        }
+      }
+      
+      if (e.key === "Enter") {
+        selectTab(selectedIndex);
+      } else if (e.key === "d") {
+        e.preventDefault(); // Prevent zoom control
+      }
+    });
+
+    // Enhanced Gamepad support
+    let lastGamepadInput = { axes: [0, 0], buttons: [] };
+    
+    function handleGamepadInput() {
+      const gamepads = navigator.getGamepads();
+      if (!gamepads) return;
+
+      const gp = gamepads[0]; // Assume single controller for simplicity
+      if (!gp) return;
+
+      // Deadzone for analog sticks
+      const deadzone = 0.5;
+      const axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
+      const axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
+
+      // Prevent rapid-fire input by checking if input changed
+      const inputChanged = Math.abs(axisX - lastGamepadInput.axes[0]) > 0.1 || 
+                          Math.abs(axisY - lastGamepadInput.axes[1]) > 0.1;
+
+      if (inputChanged) {
+        if (tabs[selectedIndex] === "games") {
+          // In games tab, horizontal controls carousel, vertical controls tabs
+          if (axisX > deadzone) {
+            navigateCarousel('right');
+          } else if (axisX < -deadzone) {
+            navigateCarousel('left');
+          }
+          
+          if (axisY > deadzone) {
+            selectedIndex = (selectedIndex + 1) % tabs.length;
+            renderNav();
+          } else if (axisY < -deadzone) {
+            selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+            renderNav();
+          }
+        } else {
+          // In other tabs, horizontal controls tab navigation
+          if (axisX > deadzone) {
+            selectedIndex = (selectedIndex + 1) % tabs.length;
+            renderNav();
+          } else if (axisX < -deadzone) {
+            selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+            renderNav();
+          }
+        }
+      }
+
+      // D-pad support
+      if (gp.buttons[15]?.pressed && !lastGamepadInput.buttons[15]) { // D-pad right
+        if (tabs[selectedIndex] === "games") {
+          navigateCarousel('right');
+        } else {
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+        }
+      } else if (gp.buttons[14]?.pressed && !lastGamepadInput.buttons[14]) { // D-pad left
+        if (tabs[selectedIndex] === "games") {
+          navigateCarousel('left');
+        } else {
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+        }
+      } else if (gp.buttons[12]?.pressed && !lastGamepadInput.buttons[12]) { // D-pad up
+        if (tabs[selectedIndex] === "games") {
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+        }
+      } else if (gp.buttons[13]?.pressed && !lastGamepadInput.buttons[13]) { // D-pad down
+        if (tabs[selectedIndex] === "games") {
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+        }
+      } else if (gp.buttons[0]?.pressed && !lastGamepadInput.buttons[0]) { // A button
+        selectTab(selectedIndex);
+      }
+
+      // Store current state for next comparison
+      lastGamepadInput.axes = [axisX, axisY];
+      lastGamepadInput.buttons = gp.buttons.map(b => b?.pressed || false);
+    }
+
+    // Poll gamepad input
+    setInterval(handleGamepadInput, 100);
+
+    // Initialize the interface
+    renderNav();
+  </script>
+
+  <script src="gamepad.js"></script>
+  <script src="keyboard.js"></script>
+  <script src="input.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

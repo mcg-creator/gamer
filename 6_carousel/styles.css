@@ -1,0 +1,578 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #1a1a2e;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+#game-container {
+    width: 1280px;
+    height: 720px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('assets/bg/halo.png') no-repeat center center;
+    background-size: cover; /* Ensure it fills the entire 1280x720 space */
+    overflow: visible; /* Ensure content is not clipped */
+}
+
+#windows-shell {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: transparent; /* Remove dark background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#app-container {
+    width: 1280px;
+    height: 720px;
+    background-color: transparent;
+    position: relative;
+    transform: none; /* Disable scaling */
+    transition: none; /* Disable transition */
+    will-change: auto; /* Reset will-change property */
+    display: flex;
+    flex-direction: column;   /* nav on top, content below */
+    align-items: center;      /* center the nav block */
+    justify-content: flex-start;
+}
+
+#app-container.scaled {
+    transform: none; /* Disable scaling */
+    transition: none; /* Disable transition */
+}
+
+/* Main Layout - Optimized for 1280x720 */
+main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.controller-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    height: 100%;
+}
+
+.section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.section h2 {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Specific Section Layouts */
+.section.face-buttons {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.section.dpad {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.section.shoulders-triggers {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.section.sticks {
+    grid-column: 1 / 3;
+    grid-row: 2;
+}
+
+.section.menu-active {
+    grid-column: 3;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Buttons */
+.button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: default;
+    transition: all 0.1s ease;
+}
+
+.button.active {
+    background: linear-gradient(135deg, #ff0080, #7928ca);
+    border-color: #ff0080;
+    transform: scale(0.95);
+    box-shadow: 0 0 15px rgba(255, 0, 128, 0.5);
+}
+
+.button.small {
+    padding: 6px;
+    font-size: 0.7rem;
+}
+
+/* Button Layouts */
+.button-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    flex: 1;
+}
+
+.button-row {
+    display: flex;
+    gap: 8px;
+}
+
+.button-row .button {
+    flex: 1;
+}
+
+/* D-Pad - Compact */
+.dpad-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 4px;
+    max-width: 150px;
+    margin: 0 auto;
+    flex: 1;
+}
+
+.dpad-grid .button {
+    font-size: 1.2rem;
+    padding: 8px;
+}
+
+.dpad-grid .button:nth-child(1) { grid-column: 2; grid-row: 1; }
+.dpad-grid .button:nth-child(2) { grid-column: 1; grid-row: 2; }
+.dpad-grid .button:nth-child(3) { grid-column: 2; grid-row: 3; }
+.dpad-grid .button:nth-child(4) { grid-column: 3; grid-row: 2; }
+
+/* Triggers - Compact */
+.trigger {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+}
+
+.trigger span {
+    display: block;
+    font-weight: bold;
+    font-size: 0.75rem;
+    margin-bottom: 6px;
+}
+
+.trigger-bar {
+    background: rgba(0, 0, 0, 0.3);
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.trigger-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00ff88, #00cc66);
+    transition: width 0.05s ease;
+}
+
+/* Analog Sticks - Horizontal Layout */
+.sticks-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    flex: 1;
+}
+
+.stick-container {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stick-label {
+    font-weight: bold;
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+    color: #aaa;
+}
+
+.stick-zone {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+}
+
+.stick-indicator {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #ff0080, #7928ca);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.05s ease;
+    box-shadow: 0 0 12px rgba(255, 0, 128, 0.5);
+}
+
+.stick-values {
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: #888;
+    margin-bottom: 6px;
+}
+
+.stick-values span {
+    color: #00ff88;
+    font-weight: bold;
+}
+
+/* Menu and Active Buttons Section */
+.menu-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.menu-buttons-grid .button {
+    font-size: 0.7rem;
+    padding: 8px 4px;
+}
+
+/* Active Buttons Display */
+#active-buttons {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    padding: 10px;
+    min-height: 40px;
+    font-family: monospace;
+    color: #00ff88;
+    font-weight: bold;
+    font-size: 0.75rem;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Keyboard Controls - Simplified */
+.keyboard-help {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    line-height: 1.4;
+}
+
+.key-group {
+    margin-bottom: 4px;
+}
+
+.key-group:last-child {
+    margin-bottom: 0;
+}
+
+.key-group strong {
+    color: #00ff88;
+    display: inline-block;
+    min-width: 80px;
+}
+
+/* Scrollbar Styling */
+main::-webkit-scrollbar {
+    width: 8px;
+}
+
+main::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+main::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ───────────────────────────────────────────── */
+/* TOP NAV INSIDE APP CONTAINER (added)         */
+/* ───────────────────────────────────────────── */
+
+#app-container {
+    /* make the app container own the vertical layout */
+    display: flex;
+    flex-direction: column;   /* nav on top, content below */
+    align-items: center;      /* center the nav block */
+    justify-content: flex-start;
+}
+
+#top-nav {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    border-bottom: 1px solid #333;
+    border-radius: 0 0 8px 8px;
+    padding: 8px 12px;
+    width: max-content;       /* shrink to icons */
+    margin: 0 auto 8px;       /* center within app container */
+    z-index: 1;               /* keep above content if overlapping */
+    position: absolute;
+    top: 36px; /* Position at 36px from the top */
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
+    outline: none; /* Remove any outline */
+    box-shadow: none; /* Remove any shadow */
+    border: none; /* Remove any border */
+}
+
+#top-nav .nav-item {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    margin: 0 8px; /* Reduce padding to 8px between each item */
+}
+
+#top-nav .nav-item img {
+    width: 40px;
+    height: 40px;
+    display: block;
+}
+
+#top-nav .nav-item.is-selected img {
+    outline: 2px solid #6ee7ff;
+    border-radius: 8px;
+}
+
+/* Ensure the main content fills remaining app space */
+#content {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #eee;
+}
+
+/* Updated styles for the navigation bar */
+.navbar {
+    background: transparent !important; /* Ensure no background */
+    border: none !important; /* Ensure no border */
+}
+
+/* ───────────────────────────────────────────── */
+/* GAMES CAROUSEL STYLES                         */
+/* ───────────────────────────────────────────── */
+
+.carousel-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    background: transparent;
+}
+
+.carousel-container.hidden {
+    display: none;
+}
+
+.carousel-wrapper {
+    width: 100%;
+    height: 460px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transform: translateY(35px);
+}
+
+.carousel-track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: transparent;
+}
+
+.game-card {
+    position: absolute;
+    width: 800px;
+    height: 460px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: none;
+    background: transparent;
+}
+
+.game-card.center {
+    transform: translateX(0) scale(1.15);
+    z-index: 3;
+    filter: brightness(1);
+}
+
+.game-card.left {
+    transform: translateX(-800px) scale(1.0);
+    z-index: 1;
+    filter: brightness(0.6);
+    opacity: 0.7;
+}
+
+.game-card.right {
+    transform: translateX(800px) scale(1.0);
+    z-index: 1;
+    filter: brightness(0.6);
+    opacity: 0.7;
+}
+
+.game-card.hidden {
+    transform: translateX(0) scale(0.5);
+    opacity: 0;
+    z-index: 0;
+}
+
+.game-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.game-card:hover .game-image {
+    transform: scale(1.05);
+}
+
+.game-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    padding: 20px 16px 16px;
+    color: white;
+    transition: opacity 0.3s ease;
+}
+
+.game-info h3 {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 0 0 4px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.game-info p {
+    font-size: 0.9rem;
+    margin: 0;
+    opacity: 0.8;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Center card gets special highlighting */
+.game-card.center {
+    box-shadow: none;
+}
+
+.game-card.center .game-info {
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+}
+
+/* Navigation indicators */
+.carousel-nav {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 4;
+}
+
+.carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.carousel-dot.active {
+    background: #6ee7ff;
+    transform: scale(1.2);
+}
+
+/* Default content styling */
+#default-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #eee;
+}
