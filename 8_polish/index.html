@@ -1,0 +1,550 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROG Ally Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <div id="game-container">
+      <div id="windows-shell">
+        <div id="app-container">
+          
+          <!-- Top Navigation (inside app-container) -->
+          <nav id="top-nav"></nav>
+          
+          <!-- App Content -->
+          <main id="content">
+            <!-- Games Carousel -->
+            <div id="games-carousel" class="carousel-container">
+              <div class="carousel-wrapper">
+                <div class="carousel-track">
+                  <!-- Game cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Default Content for Other Tabs -->
+            <div id="default-content" style="display: none;">Games</div>
+          </main>
+
+          <!-- Bottom Controls -->
+          <div id="bottom-controls">
+            <img id="control-image" src="" alt="Controls" />
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Dynamic game detection system
+    let games = [];
+    let currentGameIndex = 0;
+    
+    // Predefined list of known games with nice titles - you can expand this
+    const gameMetadata = {
+      "halo": { title: "Halo", subtitle: "The Master Chief Collection" },
+      "spiderman": { title: "Spider-Man", subtitle: "Miles Morales" },
+      "starfield": { title: "Starfield", subtitle: "Space Adventure" },
+      "sea_of_thieves": { title: "Sea of Thieves", subtitle: "Pirate Adventure" },
+      "rainworld": { title: "Rain World", subtitle: "Survival Platformer" },
+      "silksong": { title: "Hollow Knight", subtitle: "Silksong" },
+      // Add more games here as needed
+    };
+    
+    // Function to generate a nice title from filename if not in metadata
+    function generateGameTitle(filename) {
+      return filename
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    // Function to dynamically detect available games
+    async function detectGames() {
+      const detectedGames = [];
+      
+      // List of common image extensions
+      const imageExtensions = ['png', 'jpg', 'jpeg', 'webp'];
+      
+      // We'll try to detect games by attempting to load images
+      // This is a workaround since we can't directly read the filesystem from the browser
+      const potentialGames = [
+        'halo', 'spiderman', 'starfield', 'sea_of_thieves', 'rainworld', 'silksong',
+        // Add more potential game names here as you add them
+        'cyberpunk', 'witcher3', 'fallout4', 'skyrim', 'gta5', 'rdr2', 
+        'doom', 'minecraft', 'fortnite', 'apex', 'valorant', 'overwatch',
+        'destiny2', 'cod', 'battlefield', 'assassins_creed', 'far_cry',
+        'horizon', 'ghost_of_tsushima', 'god_of_war', 'last_of_us',
+        'uncharted', 'tomb_raider', 'mass_effect', 'elder_scrolls',
+        'fallout', 'bioshock', 'dishonored', 'prey', 'deathloop'
+      ];
+      
+      for (const gameName of potentialGames) {
+        try {
+          // Try to load the game image
+          const gameImg = new Image();
+          const bgImg = new Image();
+          
+          const gameImagePromise = new Promise((resolve) => {
+            gameImg.onload = () => resolve(true);
+            gameImg.onerror = () => resolve(false);
+            gameImg.src = `assets/games/${gameName}.png`;
+          });
+          
+          const bgImagePromise = new Promise((resolve) => {
+            bgImg.onload = () => resolve(true);
+            bgImg.onerror = () => resolve(false);
+            bgImg.src = `assets/bg/${gameName}.png`;
+          });
+          
+          const [gameExists, bgExists] = await Promise.all([gameImagePromise, bgImagePromise]);
+          
+          if (gameExists) {
+            const gameData = gameMetadata[gameName] || {
+              title: generateGameTitle(gameName),
+              subtitle: "Adventure Game"
+            };
+            
+            detectedGames.push({
+              id: gameName,
+              title: gameData.title,
+              subtitle: gameData.subtitle,
+              hasBackground: bgExists
+            });
+          }
+        } catch (error) {
+          console.log(`Skipping ${gameName}:`, error);
+        }
+      }
+      
+      return detectedGames;
+    }
+    
+    // Function to dynamically create CSS for backgrounds
+    function createDynamicCSS() {
+      // Remove existing dynamic styles if any
+      const existingStyle = document.getElementById('dynamic-game-styles');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+      
+      const style = document.createElement('style');
+      style.id = 'dynamic-game-styles';
+      
+      let css = '';
+      games.forEach(game => {
+        if (game.hasBackground) {
+          css += `
+#game-container.bg-${game.id} {
+    background-image: url('assets/bg/${game.id}.png');
+}
+`;
+        }
+      });
+      
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+    
+    // Function to dynamically create game cards in HTML
+    function createGameCards() {
+      const carouselTrack = document.querySelector('.carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      games.forEach(game => {
+        const gameCard = document.createElement('div');
+        gameCard.className = 'game-card';
+        gameCard.dataset.game = game.id;
+        
+        const gameImage = document.createElement('img');
+        gameImage.src = `assets/games/${game.id}.png`;
+        gameImage.alt = game.title;
+        gameImage.className = 'game-image';
+        
+        gameCard.appendChild(gameImage);
+        carouselTrack.appendChild(gameCard);
+      });
+    }
+    
+    // Initialize the games system
+    async function initializeGames() {
+      console.log('🎮 Detecting available games...');
+      games = await detectGames();
+      console.log(`Found ${games.length} games:`, games.map(g => g.title));
+      
+      if (games.length === 0) {
+        console.warn('No games detected! Make sure images are in assets/games/ folder');
+        // Fallback to original hardcoded list
+        games = [
+          { id: "halo", title: "Halo", subtitle: "The Master Chief Collection", hasBackground: true }
+        ];
+      }
+      
+      createDynamicCSS();
+      createGameCards();
+      updateCarousel();
+    }
+    
+    function updateCarousel() {
+      const gameCards = document.querySelectorAll('.game-card');
+      const totalGames = gameCards.length;
+      const gameContainer = document.getElementById('game-container');
+      
+      if (totalGames === 0) return; // No games to display
+      
+      // Update background based on current game
+      const currentGame = games[currentGameIndex];
+      if (currentGame && gameContainer) {
+        // Remove all background classes
+        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+        
+        // Add the current game's background class if it has a background
+        if (currentGame.hasBackground) {
+          gameContainer.classList.add(`bg-${currentGame.id}`);
+        }
+      }
+      
+      gameCards.forEach((card, index) => {
+        // Remove all position classes
+        card.classList.remove('center', 'left', 'right', 'hidden');
+        
+        // Calculate relative position
+        const relativeIndex = (index - currentGameIndex + totalGames) % totalGames;
+        
+        if (relativeIndex === 0) {
+          // Center position
+          card.classList.add('center');
+          card.style.zIndex = '3';
+          card.style.transform = ''; // Reset manual transform
+          card.style.opacity = '';   // Reset manual opacity
+        } else if (relativeIndex === totalGames - 1) {
+          // Left position (previous item)
+          card.classList.add('left');
+          card.style.zIndex = '1';
+          card.style.transform = ''; // Reset manual transform
+          card.style.opacity = '';   // Reset manual opacity
+        } else if (relativeIndex === 1) {
+          // Right position (next item)
+          card.classList.add('right');
+          card.style.zIndex = '1';
+          card.style.transform = ''; // Reset manual transform
+          card.style.opacity = '';   // Reset manual opacity
+        } else {
+          // Hidden positions - place them far off screen to avoid shuffling
+          card.classList.add('hidden');
+          card.style.zIndex = '0';
+          // Position hidden cards far away to prevent visibility during transitions
+          if (relativeIndex < totalGames / 2) {
+            // Place on the right side
+            card.style.transform = 'translateX(2000px) scale(0.5)';
+          } else {
+            // Place on the left side
+            card.style.transform = 'translateX(-2000px) scale(0.5)';
+          }
+          card.style.opacity = '0';
+        }
+      });
+    }
+
+    function navigateCarousel(direction) {
+      const totalGames = games.length;
+      if (direction === 'right') {
+        currentGameIndex = (currentGameIndex + 1) % totalGames;
+      } else if (direction === 'left') {
+        currentGameIndex = (currentGameIndex - 1 + totalGames) % totalGames;
+      }
+      updateCarousel();
+    }
+
+    // Navigation tabs logic
+    const tabs = [
+      "games", "apps", "friends", "gallery", "notifications", "settings", "copilot"
+    ];
+
+    let selectedIndex = 0;
+    let navigationFocus = "nav"; // "nav" for navigation bar, "carousel" for games carousel
+    const nav = document.getElementById("top-nav");
+    const content = document.getElementById("content");
+    const gamesCarousel = document.getElementById("games-carousel");
+    const defaultContent = document.getElementById("default-content");
+
+    function renderNav() {
+      nav.innerHTML = "";
+      tabs.forEach((tab, i) => {
+        const btn = document.createElement("button");
+        btn.className = "nav-item" + (i === selectedIndex ? " is-active" : "");
+        btn.dataset.index = i;
+
+        // Choose correct image
+        const state = (i === selectedIndex) ? "active" : "default";
+        const img = document.createElement("img");
+        img.src = `assets/nav/${tab}_${state}.png`;
+        img.alt = tab;
+        btn.appendChild(img);
+
+        btn.addEventListener("mouseenter", () => {
+          img.src = `assets/nav/${tab}_active.png`;
+        });
+        btn.addEventListener("mouseleave", () => {
+          img.src = `assets/nav/${tab}_${i === selectedIndex ? "active" : "default"}.png`;
+        });
+        btn.addEventListener("click", () => selectTab(i));
+
+        nav.appendChild(btn);
+      });
+
+      // Update content based on selected tab
+      updateContent();
+      updateFocusVisuals();
+    }
+
+    function updateContent() {
+      if (tabs[selectedIndex] === "games") {
+        gamesCarousel.style.display = "flex";
+        defaultContent.style.display = "none";
+        updateCarousel();
+      } else {
+        gamesCarousel.style.display = "none";
+        defaultContent.style.display = "flex";
+        defaultContent.textContent = tabs[selectedIndex].charAt(0).toUpperCase() + tabs[selectedIndex].slice(1);
+        // Reset focus to nav when not in games tab
+        navigationFocus = "nav";
+      }
+      
+      // Update bottom controls
+      updateBottomControls();
+    }
+    
+    function updateBottomControls() {
+      const controlImage = document.getElementById('control-image');
+      const currentTab = tabs[selectedIndex];
+      
+      let newSrc = '';
+      let shouldShow = true;
+      
+      // Determine which image to show
+      if (currentTab === 'games' && navigationFocus === 'carousel') {
+        newSrc = 'assets/btns/play.png';
+      } else if (['games', 'apps', 'friends', 'gallery', 'notifications', 'settings'].includes(currentTab)) {
+        newSrc = 'assets/btns/view_all.png';
+      } else if (currentTab === 'copilot') {
+        shouldShow = false;
+      }
+      
+      // If image should be hidden
+      if (!shouldShow) {
+        controlImage.style.opacity = '0';
+        setTimeout(() => {
+          controlImage.style.display = 'none';
+        }, 125); // Half of transition duration
+        return;
+      }
+      
+      // If same image, no need to transition
+      if (controlImage.src.endsWith(newSrc)) {
+        controlImage.style.display = 'block';
+        controlImage.style.opacity = '0.8';
+        return;
+      }
+      
+      // Fade out current image
+      controlImage.style.opacity = '0';
+      
+      // After fade out completes, change image and fade in
+      setTimeout(() => {
+        controlImage.src = newSrc;
+        controlImage.style.display = 'block';
+        // Small delay to ensure image loads
+        setTimeout(() => {
+          controlImage.style.opacity = '0.8';
+        }, 25);
+      }, 125); // Half of transition duration
+    }
+
+    function selectTab(i) {
+      selectedIndex = i;
+      navigationFocus = "nav"; // Reset focus to nav when changing tabs
+      renderNav();
+    }
+
+    function updateFocusVisuals() {
+      // Update visual indicators for navigation focus
+      const navItems = document.querySelectorAll('.nav-item');
+      const carouselWrapper = document.querySelector('.carousel-wrapper');
+      
+      console.log('Navigation focus:', navigationFocus); // Debug logging
+      
+      if (navigationFocus === "nav") {
+        // Navigation bar focused - keep both at full opacity but make carousel images uniform
+        nav.style.opacity = "1";
+        if (carouselWrapper) {
+          carouselWrapper.style.opacity = "1";
+          carouselWrapper.classList.add('carousel-inactive');
+        }
+      } else if (navigationFocus === "carousel" && tabs[selectedIndex] === "games") {
+        // Carousel focused - keep both at full opacity and restore normal carousel behavior
+        nav.style.opacity = "1";
+        if (carouselWrapper) {
+          carouselWrapper.style.opacity = "1";
+          carouselWrapper.classList.remove('carousel-inactive');
+        }
+      }
+      
+      // Update bottom controls when focus changes
+      updateBottomControls();
+    }
+
+    // Enhanced keyboard support with two-level navigation
+    document.addEventListener("keydown", (e) => {
+      if (navigationFocus === "nav") {
+        // Navigation bar is focused - left/right moves through tabs
+        if (e.key === "ArrowRight") {
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+          e.preventDefault();
+        } else if (e.key === "ArrowLeft") {
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+          e.preventDefault();
+        } else if (e.key === "ArrowDown") {
+          // Move focus down to carousel (only if in games tab)
+          if (tabs[selectedIndex] === "games") {
+            navigationFocus = "carousel";
+            updateFocusVisuals();
+          }
+          e.preventDefault();
+        }
+      } else if (navigationFocus === "carousel" && tabs[selectedIndex] === "games") {
+        // Carousel is focused - left/right moves through games
+        if (e.key === "ArrowRight") {
+          navigateCarousel('right');
+          e.preventDefault();
+        } else if (e.key === "ArrowLeft") {
+          navigateCarousel('left');
+          e.preventDefault();
+        } else if (e.key === "ArrowUp") {
+          // Move focus back up to navigation bar
+          navigationFocus = "nav";
+          updateFocusVisuals();
+          e.preventDefault();
+        }
+      }
+      
+      if (e.key === "Enter") {
+        if (navigationFocus === "nav") {
+          selectTab(selectedIndex);
+        }
+      } else if (e.key === "d") {
+        e.preventDefault(); // Prevent zoom control
+      }
+    });
+
+    // Enhanced Gamepad support with two-level navigation
+    let lastGamepadInput = { axes: [0, 0], buttons: [] };
+    
+    function handleGamepadInput() {
+      const gamepads = navigator.getGamepads();
+      if (!gamepads) return;
+
+      const gp = gamepads[0]; // Assume single controller for simplicity
+      if (!gp) return;
+
+      // Deadzone for analog sticks
+      const deadzone = 0.5;
+      const axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
+      const axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
+
+      // Prevent rapid-fire input by checking if input changed
+      const inputChanged = Math.abs(axisX - lastGamepadInput.axes[0]) > 0.1 || 
+                          Math.abs(axisY - lastGamepadInput.axes[1]) > 0.1;
+
+      if (inputChanged) {
+        if (navigationFocus === "nav") {
+          // Navigation bar focused - left/right controls tabs, down enters carousel
+          if (axisX > deadzone) {
+            selectedIndex = (selectedIndex + 1) % tabs.length;
+            renderNav();
+          } else if (axisX < -deadzone) {
+            selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+            renderNav();
+          } else if (axisY > deadzone && tabs[selectedIndex] === "games") {
+            // Move focus down to carousel
+            navigationFocus = "carousel";
+            updateFocusVisuals();
+          }
+        } else if (navigationFocus === "carousel" && tabs[selectedIndex] === "games") {
+          // Carousel focused - left/right controls games, up returns to nav
+          if (axisX > deadzone) {
+            navigateCarousel('right');
+          } else if (axisX < -deadzone) {
+            navigateCarousel('left');
+          } else if (axisY < -deadzone) {
+            // Move focus back up to navigation
+            navigationFocus = "nav";
+            updateFocusVisuals();
+          }
+        }
+      }
+
+      // D-pad support with two-level navigation
+      if (gp.buttons[15]?.pressed && !lastGamepadInput.buttons[15]) { // D-pad right
+        if (navigationFocus === "nav") {
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+        } else if (navigationFocus === "carousel" && tabs[selectedIndex] === "games") {
+          navigateCarousel('right');
+        }
+      } else if (gp.buttons[14]?.pressed && !lastGamepadInput.buttons[14]) { // D-pad left
+        if (navigationFocus === "nav") {
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+        } else if (navigationFocus === "carousel" && tabs[selectedIndex] === "games") {
+          navigateCarousel('left');
+        }
+      } else if (gp.buttons[12]?.pressed && !lastGamepadInput.buttons[12]) { // D-pad up
+        if (navigationFocus === "carousel") {
+          // Move focus back to navigation
+          navigationFocus = "nav";
+          updateFocusVisuals();
+        }
+      } else if (gp.buttons[13]?.pressed && !lastGamepadInput.buttons[13]) { // D-pad down
+        if (navigationFocus === "nav" && tabs[selectedIndex] === "games") {
+          // Move focus down to carousel
+          navigationFocus = "carousel";
+          updateFocusVisuals();
+        }
+      } else if (gp.buttons[0]?.pressed && !lastGamepadInput.buttons[0]) { // A button
+        if (navigationFocus === "nav") {
+          selectTab(selectedIndex);
+        }
+      }
+
+      // Store current state for next comparison
+      lastGamepadInput.axes = [axisX, axisY];
+      lastGamepadInput.buttons = gp.buttons.map(b => b?.pressed || false);
+    }
+
+    // Poll gamepad input
+    setInterval(handleGamepadInput, 100);
+
+    // Initialize the interface
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🎮 Starting ROG Ally Game Interface...');
+      await initializeGames();
+      renderNav();
+    });
+  </script>
+
+  <script src="gamepad.js"></script>
+  <script src="keyboard.js"></script>
+  <script src="input.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
