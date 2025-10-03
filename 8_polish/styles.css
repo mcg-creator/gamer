@@ -445,7 +445,7 @@ main::-webkit-scrollbar-thumb:hover {
 
 #bottom-controls {
     position: absolute;
-    bottom: 70px;
+    bottom: 65px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -459,7 +459,7 @@ main::-webkit-scrollbar-thumb:hover {
     width: auto;
     opacity: 0.8;
     transition: opacity 0.25s ease-in-out;
-    transform: scale(0.75);
+    transform: scale(0.6);
 }
 
 #control-image:hover {
