@@ -35,6 +35,15 @@
               </div>
             </div>
             
+            <!-- Friends Carousel -->
+            <div id="friends-carousel" class="carousel-container" style="display: none;">
+              <div class="friends-carousel-wrapper carousel-wrapper">
+                <div class="friends-carousel-track carousel-track">
+                  <!-- Friend cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
             <!-- Default Content for Other Tabs -->
             <div id="default-content" style="display: none;">Content</div>
           </main>
@@ -165,6 +174,17 @@
           css += `
 #game-container.bg-${app.id} {
     background-image: url('assets/bg/apps/${app.id}.png');
+}
+`;
+        }
+      });
+      
+      // Add friend backgrounds
+      friends.forEach(friend => {
+        if (friend.hasBackground) {
+          css += `
+#game-container.bg-${friend.id} {
+    background-image: url('assets/bg/friends/${friend.id}.png');
 }
 `;
         }
@@ -329,6 +349,118 @@
       updateAppsCarousel();
     }
     
+    // Friends system - similar to games and apps
+    let friends = [];
+    let currentFriendIndex = 0;
+    
+    // Predefined list of known friends with nice titles
+    const friendMetadata = {
+      "friend1": { title: "Alex", subtitle: "Online" },
+      "friend2": { title: "Sarah", subtitle: "Playing Halo" },
+      "friend3": { title: "Mike", subtitle: "Away" },
+      "friend4": { title: "Jessica", subtitle: "Online" },
+      "friend5": { title: "David", subtitle: "Offline" },
+      "friend6": { title: "Emma", subtitle: "Playing Minecraft" },
+      "friend7": { title: "Ryan", subtitle: "Playing Starfield" },
+      "friend8": { title: "Zoe", subtitle: "Online" },
+      // Add more friends here as needed
+    };
+    
+    // Function to generate a nice title from filename if not in metadata
+    function generateFriendTitle(filename) {
+      return filename
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    // Function to dynamically detect available friends
+    async function detectFriends() {
+      const detectedFriends = [];
+      
+      const potentialFriends = [
+        'friend1', 'friend2', 'friend3', 'friend4', 'friend5', 'friend6',
+        // Add more potential friend names here as you add them
+        'friend7', 'friend8', 'friend9', 'friend10'
+      ];
+      
+      for (const friendName of potentialFriends) {
+        try {
+          const friendImg = new Image();
+          const bgImg = new Image();
+          
+          const friendImagePromise = new Promise((resolve) => {
+            friendImg.onload = () => resolve(true);
+            friendImg.onerror = () => resolve(false);
+            friendImg.src = `assets/friends/${friendName}.png`;
+          });
+          
+          const bgImagePromise = new Promise((resolve) => {
+            bgImg.onload = () => resolve(true);
+            bgImg.onerror = () => resolve(false);
+            bgImg.src = `assets/bg/friends/${friendName}.png`;
+          });
+          
+          const [friendExists, bgExists] = await Promise.all([friendImagePromise, bgImagePromise]);
+          
+          if (friendExists) {
+            const friendData = friendMetadata[friendName] || {
+              title: generateFriendTitle(friendName),
+              subtitle: "Online"
+            };
+            
+            detectedFriends.push({
+              id: friendName,
+              title: friendData.title,
+              subtitle: friendData.subtitle,
+              hasBackground: bgExists
+            });
+          }
+        } catch (error) {
+          console.log(`Could not load friend: ${friendName}`);
+        }
+      }
+      
+      return detectedFriends;
+    }
+    
+    function createFriendCards() {
+      const carouselTrack = document.querySelector('.friends-carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      friends.forEach((friend, index) => {
+        const friendCard = document.createElement('div');
+        friendCard.className = 'friend-card';
+        friendCard.dataset.friend = friend.id;
+        
+        const friendImage = document.createElement('img');
+        friendImage.src = `assets/friends/${friend.id}.png`;
+        friendImage.alt = friend.title;
+        friendImage.className = 'friend-image';
+        
+        friendCard.appendChild(friendImage);
+        carouselTrack.appendChild(friendCard);
+      });
+    }
+    
+    async function initializeFriends() {
+      console.log('👥 Detecting available friends...');
+      friends = await detectFriends();
+      console.log(`Found ${friends.length} friends:`, friends.map(f => f.title));
+      
+      if (friends.length === 0) {
+        console.warn('No friends detected! Make sure images are in assets/friends/ folder');
+        // Fallback to original hardcoded list
+        friends = [
+          { id: "friend1", title: "Friend", subtitle: "Online", hasBackground: false }
+        ];
+      }
+      
+      createFriendCards();
+      updateFriendsCarousel();
+    }
+    
     function updateAppsCarousel() {
       const appCards = document.querySelectorAll('.apps-carousel-track .game-card');
       const totalApps = appCards.length;
@@ -356,26 +488,43 @@
         // Calculate relative position
         const relativeIndex = (index - currentAppIndex + totalApps) % totalApps;
         
+        // Get the app image element
+        const appImage = card.querySelector('.game-image');
+        const appId = card.dataset.app;
+        
         if (relativeIndex === 0) {
-          // Center position
+          // Center position - use focus image only when carousel has focus
           card.classList.add('center');
           card.style.zIndex = '3';
           card.style.transform = '';
           card.style.opacity = '';
+          if (appImage && appId) {
+            if (navigationFocus === "carousel") {
+              appImage.src = `assets/apps/${appId}_focus.png`;
+            } else {
+              appImage.src = `assets/apps/${appId}.png`;
+            }
+          }
         } else if (relativeIndex === totalApps - 1) {
-          // Left position (previous item)
+          // Left position (previous item) - use regular image
           card.classList.add('left');
           card.style.zIndex = '1';
           card.style.transform = '';
           card.style.opacity = '';
+          if (appImage && appId) {
+            appImage.src = `assets/apps/${appId}.png`;
+          }
         } else if (relativeIndex === 1) {
-          // Right position (next item)
+          // Right position (next item) - use regular image
           card.classList.add('right');
           card.style.zIndex = '1';
           card.style.transform = '';
           card.style.opacity = '';
+          if (appImage && appId) {
+            appImage.src = `assets/apps/${appId}.png`;
+          }
         } else {
-          // Hidden positions
+          // Hidden positions - use regular image
           card.classList.add('hidden');
           card.style.zIndex = '0';
           if (relativeIndex < totalApps / 2) {
@@ -384,6 +533,9 @@
             card.style.transform = 'translateX(-2000px) scale(0.5)';
           }
           card.style.opacity = '0';
+          if (appImage && appId) {
+            appImage.src = `assets/apps/${appId}.png`;
+          }
         }
       });
     }
@@ -396,6 +548,140 @@
         currentAppIndex = (currentAppIndex - 1 + totalApps) % totalApps;
       }
       updateAppsCarousel();
+      updateBottomControls(); // Update button when navigating through apps
+    }
+    
+    function updateFriendsCarousel() {
+      const friendCards = document.querySelectorAll('.friends-carousel-track .friend-card');
+      const totalFriends = friendCards.length;
+      const gameContainer = document.getElementById('game-container');
+      
+      if (totalFriends === 0) return; // No friends to display
+      
+      // Update background based on current friend
+      const currentFriend = friends[currentFriendIndex];
+      if (currentFriend && gameContainer) {
+        // Remove all background classes
+        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+        
+        // Add the current friend's background class if it has a background
+        if (currentFriend.hasBackground) {
+          gameContainer.classList.add(`bg-${currentFriend.id}`);
+        }
+      }
+      
+      // First pass: immediately hide all cards that should be hidden
+      friendCards.forEach((card, index) => {
+        const relativeIndex = (index - currentFriendIndex + totalFriends) % totalFriends;
+        
+        // If this card should be hidden, hide it immediately without transition
+        if (relativeIndex > 2 && relativeIndex < totalFriends - 2) {
+          card.style.transition = 'none'; // Disable transitions
+          card.style.opacity = '0';
+          card.style.visibility = 'hidden';
+          card.style.transform = 'translateX(0px) scale(0)';
+          card.style.zIndex = '0';
+        }
+      });
+      
+      // Small delay to ensure hidden cards are processed, then position visible cards
+      requestAnimationFrame(() => {
+        friendCards.forEach((card, index) => {
+          // Remove all position classes
+          card.classList.remove('center', 'left', 'right', 'far-left', 'far-right', 'hidden');
+          
+          // Calculate relative position
+          const relativeIndex = (index - currentFriendIndex + totalFriends) % totalFriends;
+          
+          // Get the friend image element
+          const friendImage = card.querySelector('.friend-image');
+          const friendId = card.dataset.friend;
+          
+          if (relativeIndex === 0) {
+            // Center position - use focus image only when carousel has focus
+            card.classList.add('center');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '5';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (friendImage && friendId) {
+              if (navigationFocus === "carousel") {
+                friendImage.src = `assets/friends/${friendId}_focus.png`;
+              } else {
+                friendImage.src = `assets/friends/${friendId}.png`;
+              }
+            }
+          } else if (relativeIndex === totalFriends - 1) {
+            // Left position (previous item) - use regular image
+            card.classList.add('left');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '3';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (friendImage && friendId) {
+              friendImage.src = `assets/friends/${friendId}.png`;
+            }
+          } else if (relativeIndex === 1) {
+            // Right position (next item) - use regular image
+            card.classList.add('right');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '3';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (friendImage && friendId) {
+              friendImage.src = `assets/friends/${friendId}.png`;
+            }
+          } else if (relativeIndex === totalFriends - 2) {
+            // Far left peek position
+            card.classList.add('far-left');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (friendImage && friendId) {
+              friendImage.src = `assets/friends/${friendId}.png`;
+            }
+          } else if (relativeIndex === 2) {
+            // Far right peek position
+            card.classList.add('far-right');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (friendImage && friendId) {
+              friendImage.src = `assets/friends/${friendId}.png`;
+            }
+          } else {
+            // Hidden positions - keep them hidden
+            card.classList.add('hidden');
+            card.style.transition = 'none'; // No transition for hidden cards
+            card.style.zIndex = '0';
+            card.style.opacity = '0';
+            card.style.visibility = 'hidden';
+            card.style.transform = 'translateX(0px) scale(0)';
+            if (friendImage && friendId) {
+              friendImage.src = `assets/friends/${friendId}.png`;
+            }
+          }
+        });
+      });
+    }
+    
+    function navigateFriendsCarousel(direction) {
+      const totalFriends = friends.length;
+      if (direction === 'right') {
+        currentFriendIndex = (currentFriendIndex + 1) % totalFriends;
+      } else if (direction === 'left') {
+        currentFriendIndex = (currentFriendIndex - 1 + totalFriends) % totalFriends;
+      }
+      updateFriendsCarousel();
+      updateBottomControls(); // Update button when navigating through friends
     }
     
     function updateGamesCarousel() {
@@ -418,45 +704,83 @@
         }
       }
       
+      // First pass: immediately hide all cards that should be hidden
       gameCards.forEach((card, index) => {
-        // Remove all position classes
-        card.classList.remove('center', 'left', 'right', 'hidden');
-        
-        // Calculate relative position
         const relativeIndex = (index - currentGameIndex + totalGames) % totalGames;
         
-        if (relativeIndex === 0) {
-          // Center position
-          card.classList.add('center');
-          card.style.zIndex = '3';
-          card.style.transform = ''; // Reset manual transform
-          card.style.opacity = '';   // Reset manual opacity
-        } else if (relativeIndex === totalGames - 1) {
-          // Left position (previous item)
-          card.classList.add('left');
-          card.style.zIndex = '1';
-          card.style.transform = ''; // Reset manual transform
-          card.style.opacity = '';   // Reset manual opacity
-        } else if (relativeIndex === 1) {
-          // Right position (next item)
-          card.classList.add('right');
-          card.style.zIndex = '1';
-          card.style.transform = ''; // Reset manual transform
-          card.style.opacity = '';   // Reset manual opacity
-        } else {
-          // Hidden positions - place them far off screen to avoid shuffling
-          card.classList.add('hidden');
-          card.style.zIndex = '0';
-          // Position hidden cards far away to prevent visibility during transitions
-          if (relativeIndex < totalGames / 2) {
-            // Place on the right side
-            card.style.transform = 'translateX(2000px) scale(0.5)';
-          } else {
-            // Place on the left side
-            card.style.transform = 'translateX(-2000px) scale(0.5)';
-          }
+        // If this card should be hidden, hide it immediately without transition
+        if (relativeIndex > 1 && relativeIndex < totalGames - 1) {
+          card.style.transition = 'none'; // Disable transitions
           card.style.opacity = '0';
+          card.style.visibility = 'hidden';
+          card.style.transform = 'translateX(0px) scale(0)';
+          card.style.zIndex = '0';
         }
+      });
+      
+      // Small delay to ensure hidden cards are processed, then position visible cards
+      requestAnimationFrame(() => {
+        gameCards.forEach((card, index) => {
+          // Remove all position classes
+          card.classList.remove('center', 'left', 'right', 'hidden');
+          
+          // Calculate relative position
+          const relativeIndex = (index - currentGameIndex + totalGames) % totalGames;
+          
+          // Get the game image element
+          const gameImage = card.querySelector('.game-image');
+          const gameId = card.dataset.game;
+          
+          if (relativeIndex === 0) {
+            // Center position - use focus image only when carousel has focus
+            card.classList.add('center');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '3';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (gameImage && gameId) {
+              if (navigationFocus === "carousel") {
+                gameImage.src = `assets/games/${gameId}_focus.png`;
+              } else {
+                gameImage.src = `assets/games/${gameId}.png`;
+              }
+            }
+          } else if (relativeIndex === totalGames - 1) {
+            // Left position (previous item) - use regular image
+            card.classList.add('left');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (gameImage && gameId) {
+              gameImage.src = `assets/games/${gameId}.png`;
+            }
+          } else if (relativeIndex === 1) {
+            // Right position (next item) - use regular image
+            card.classList.add('right');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (gameImage && gameId) {
+              gameImage.src = `assets/games/${gameId}.png`;
+            }
+          } else {
+            // Hidden positions - keep them hidden
+            card.classList.add('hidden');
+            card.style.transition = 'none'; // No transition for hidden cards
+            card.style.zIndex = '0';
+            card.style.opacity = '0';
+            card.style.visibility = 'hidden';
+            card.style.transform = 'translateX(0px) scale(0)';
+            if (gameImage && gameId) {
+              gameImage.src = `assets/games/${gameId}.png`;
+            }
+          }
+        });
       });
     }
 
@@ -538,10 +862,13 @@
       
       gamesCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
       appsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      const friendsCarousel = document.getElementById('friends-carousel');
+      friendsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
       defaultContent.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
       
       gamesCarousel.style.opacity = "0";
       appsCarousel.style.opacity = "0";
+      friendsCarousel.style.opacity = "0";
       defaultContent.style.opacity = "0";
       
       // After fade out completes, switch content and fade in
@@ -549,6 +876,7 @@
         // Hide all elements
         gamesCarousel.style.display = "none";
         appsCarousel.style.display = "none";
+        friendsCarousel.style.display = "none";
         defaultContent.style.display = "none";
         
         if (currentTab === "games") {
@@ -567,10 +895,18 @@
             appsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
             appsCarousel.style.opacity = "1";
           }, 10); // Small delay to ensure display change takes effect
+        } else if (currentTab === "friends") {
+          friendsCarousel.style.display = "flex";
+          updateFriendsCarousel();
+          // Fade in friends carousel
+          setTimeout(() => {
+            friendsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            friendsCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
         } else {
           defaultContent.style.display = "flex";
           defaultContent.textContent = currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
-          // Reset focus to nav when not in games or apps tab
+          // Reset focus to nav when not in games, apps, or friends tab
           navigationFocus = "nav";
           // Fade in default content
           setTimeout(() => {
@@ -595,12 +931,31 @@
       if (currentTab === 'games' && navigationFocus === 'carousel') {
         newSrc = 'assets/btns/play.png';
       } else if (currentTab === 'apps' && navigationFocus === 'carousel') {
-        newSrc = 'assets/btns/open.png';
+        // Check which app is currently selected in the apps carousel
+        const currentApp = apps[currentAppIndex];
+        if (currentApp && (currentApp.id === 'netflix' || currentApp.id === 'steam')) {
+          newSrc = 'assets/btns/details.png';
+        } else {
+          newSrc = 'assets/btns/open.png';
+        }
+      } else if (currentTab === 'friends' && navigationFocus === 'carousel') {
+        // Check which friend is currently selected
+        const currentFriend = friends[currentFriendIndex];
+        if (currentFriend && (currentFriend.id === 'friend3' || currentFriend.id === 'friend4' || currentFriend.id === 'friend5')) {
+          newSrc = 'assets/btns/message.png';
+        } else if (currentFriend) {
+          // For other friends (friend1, friend2, friend6, friend7, friend8), show invite button
+          newSrc = 'assets/btns/invite.png';
+        } else {
+          shouldShow = false;
+        }
       } else if (currentTab === 'games' && navigationFocus === 'nav') {
         newSrc = 'assets/btns/games.png';
       } else if (currentTab === 'apps' && navigationFocus === 'nav') {
         newSrc = 'assets/btns/apps.png';
-      } else if (['friends', 'gallery', 'notifications', 'settings'].includes(currentTab)) {
+      } else if (currentTab === 'friends' && navigationFocus === 'nav') {
+        newSrc = 'assets/btns/friends.png';
+      } else if (['gallery', 'notifications', 'settings'].includes(currentTab)) {
         newSrc = 'assets/btns/view_all.png';
       } else if (currentTab === 'copilot') {
         shouldShow = false;
@@ -647,6 +1002,7 @@
       const navItems = document.querySelectorAll('.nav-item');
       const gamesCarouselWrapper = document.querySelector('.games-carousel-wrapper');
       const appsCarouselWrapper = document.querySelector('.apps-carousel-wrapper');
+      const friendsCarouselWrapper = document.querySelector('.friends-carousel-wrapper');
       const currentTab = tabs[selectedIndex];
       
       console.log('Navigation focus:', navigationFocus); // Debug logging
@@ -659,11 +1015,17 @@
         if (currentTab === "games" && gamesCarouselWrapper) {
           gamesCarouselWrapper.style.opacity = "1";
           gamesCarouselWrapper.classList.add('carousel-inactive');
+          updateGamesCarousel(); // Update games to remove focus state
         } else if (currentTab === "apps" && appsCarouselWrapper) {
           appsCarouselWrapper.style.opacity = "1";
           appsCarouselWrapper.classList.add('carousel-inactive');
+          updateAppsCarousel(); // Update apps carousel
+        } else if (currentTab === "friends" && friendsCarouselWrapper) {
+          friendsCarouselWrapper.style.opacity = "1";
+          friendsCarouselWrapper.classList.add('carousel-inactive');
+          updateFriendsCarousel(); // Update friends carousel
         }
-      } else if (navigationFocus === "carousel" && (currentTab === "games" || currentTab === "apps")) {
+      } else if (navigationFocus === "carousel" && (currentTab === "games" || currentTab === "apps" || currentTab === "friends")) {
         // Carousel focused - keep both at full opacity and restore normal carousel behavior
         nav.style.opacity = "1";
         
@@ -671,9 +1033,15 @@
         if (currentTab === "games" && gamesCarouselWrapper) {
           gamesCarouselWrapper.style.opacity = "1";
           gamesCarouselWrapper.classList.remove('carousel-inactive');
+          updateGamesCarousel(); // Update games to show focus state
         } else if (currentTab === "apps" && appsCarouselWrapper) {
           appsCarouselWrapper.style.opacity = "1";
           appsCarouselWrapper.classList.remove('carousel-inactive');
+          updateAppsCarousel(); // Update apps carousel
+        } else if (currentTab === "friends" && friendsCarouselWrapper) {
+          friendsCarouselWrapper.style.opacity = "1";
+          friendsCarouselWrapper.classList.remove('carousel-inactive');
+          updateFriendsCarousel(); // Update friends carousel
         }
       }
       
@@ -683,7 +1051,7 @@
         const tab = tabs[i];
         
         if (i === selectedIndex) {
-          if ((tab === "games" || tab === "apps") && navigationFocus === "carousel") {
+          if ((tab === "games" || tab === "apps" || tab === "friends") && navigationFocus === "carousel") {
             img.src = `assets/nav/${tab}_active.png`;
           } else {
             img.src = `assets/nav/${tab}_select.png`;
@@ -710,8 +1078,8 @@
           renderNav();
           e.preventDefault();
         } else if (e.key === "ArrowDown") {
-          // Move focus down to carousel (games or apps)
-          if (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps") {
+          // Move focus down to carousel (games, apps, or friends)
+          if (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends") {
             navigationFocus = "carousel";
             updateFocusVisuals();
           }
@@ -724,6 +1092,8 @@
             navigateGamesCarousel('right');
           } else if (tabs[selectedIndex] === "apps") {
             navigateAppsCarousel('right');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('right');
           }
           e.preventDefault();
         } else if (e.key === "ArrowLeft") {
@@ -731,6 +1101,8 @@
             navigateGamesCarousel('left');
           } else if (tabs[selectedIndex] === "apps") {
             navigateAppsCarousel('left');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('left');
           }
           e.preventDefault();
         } else if (e.key === "ArrowUp") {
@@ -778,7 +1150,7 @@
           } else if (axisX < -deadzone) {
             selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
             renderNav();
-          } else if (axisY > deadzone && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps")) {
+          } else if (axisY > deadzone && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends")) {
             // Move focus down to carousel
             navigationFocus = "carousel";
             updateFocusVisuals();
@@ -790,12 +1162,16 @@
               navigateGamesCarousel('right');
             } else if (tabs[selectedIndex] === "apps") {
               navigateAppsCarousel('right');
+            } else if (tabs[selectedIndex] === "friends") {
+              navigateFriendsCarousel('right');
             }
           } else if (axisX < -deadzone) {
             if (tabs[selectedIndex] === "games") {
               navigateGamesCarousel('left');
             } else if (tabs[selectedIndex] === "apps") {
               navigateAppsCarousel('left');
+            } else if (tabs[selectedIndex] === "friends") {
+              navigateFriendsCarousel('left');
             }
           } else if (axisY < -deadzone) {
             // Move focus back up to navigation
@@ -815,6 +1191,8 @@
             navigateGamesCarousel('right');
           } else if (tabs[selectedIndex] === "apps") {
             navigateAppsCarousel('right');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('right');
           }
         }
       } else if (gp.buttons[14]?.pressed && !lastGamepadInput.buttons[14]) { // D-pad left
@@ -826,6 +1204,8 @@
             navigateGamesCarousel('left');
           } else if (tabs[selectedIndex] === "apps") {
             navigateAppsCarousel('left');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('left');
           }
         }
       } else if (gp.buttons[12]?.pressed && !lastGamepadInput.buttons[12]) { // D-pad up
@@ -835,7 +1215,7 @@
           updateFocusVisuals();
         }
       } else if (gp.buttons[13]?.pressed && !lastGamepadInput.buttons[13]) { // D-pad down
-        if (navigationFocus === "nav" && tabs[selectedIndex] === "games") {
+        if (navigationFocus === "nav" && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends")) {
           // Move focus down to carousel
           navigationFocus = "carousel";
           updateFocusVisuals();
@@ -859,7 +1239,8 @@
       console.log('🎮 Starting ROG Ally Game Interface...');
       await initializeGames();
       await initializeApps();
-      createDynamicCSS(); // Create CSS after both games and apps are loaded
+      await initializeFriends();
+      createDynamicCSS(); // Create CSS after games, apps, and friends are loaded
       renderNav();
     });
   </script>

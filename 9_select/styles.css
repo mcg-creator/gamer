@@ -14,18 +14,23 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #app {
-    width: 100%;
-    height: 100%;
+    width: 1280px;
+    height: 720px;
     display: flex;
     align-items: center;
+    justify-content: center;
     position: relative;
+    overflow: hidden;
 }
 
 #game-container {
-    width: 100vw;
+    width: 1280px;
     height: 720px;
     position: relative;
     display: flex;
@@ -57,6 +62,7 @@ body {
 #game-container.bg-rainworld {
     background-image: url('assets/bg/rainworld.png');
 }
+
 
 #windows-shell {
     width: 100%;
@@ -497,6 +503,11 @@ main::-webkit-scrollbar-thumb:hover {
     transition: opacity 0.3s ease; /* Smooth focus transition */
 }
 
+/* Friends carousel has different height */
+.friends-carousel-wrapper {
+    height: 560px;
+}
+
 .carousel-track {
     display: flex;
     align-items: center;
@@ -518,6 +529,82 @@ main::-webkit-scrollbar-thumb:hover {
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     box-shadow: none;
     background: transparent;
+}
+
+/* Friend cards have different dimensions and layout */
+.friend-card {
+    position: absolute;
+    width: 400px;
+    height: 560px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: none;
+    background: transparent;
+}
+
+/* Friend card positioning for 5 visible cards (3 center + 2 peek) */
+.friend-card.center {
+    transform: translateX(0) scale(1.2);
+    z-index: 5;
+    filter: brightness(1);
+}
+
+.friend-card.left {
+    transform: translateX(-332px) scale(1.0);
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.friend-card.right {
+    transform: translateX(332px) scale(1.0);
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.friend-card.far-left {
+    transform: translateX(-652px) scale(1.0);
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.friend-card.far-right {
+    transform: translateX(652px) scale(1.0);
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* When friends carousel is not active, make center card same size as sides */
+.carousel-inactive .friend-card.center {
+    transform: translateX(0) scale(1.0);
+    filter: brightness(1.0);
+    opacity: 1.0;
+}
+
+/* When friends carousel is active, push side images further out to maintain spacing */
+.friends-carousel-wrapper:not(.carousel-inactive) .friend-card.left {
+    transform: translateX(-376px) scale(1.0);
+}
+
+.friends-carousel-wrapper:not(.carousel-inactive) .friend-card.right {
+    transform: translateX(376px) scale(1.0);
+}
+
+.friends-carousel-wrapper:not(.carousel-inactive) .friend-card.far-left {
+    transform: translateX(-696px) scale(1.0);
+}
+
+.friends-carousel-wrapper:not(.carousel-inactive) .friend-card.far-right {
+    transform: translateX(696px) scale(1.0);
 }
 
 .game-card.center {
@@ -558,11 +645,22 @@ main::-webkit-scrollbar-thumb:hover {
     transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+.friend-card.hidden {
+    opacity: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transform: translateX(0px) scale(0) !important;
+    transition: none !important; /* Completely disable all transitions for hidden cards */
+}
+
 .game-card.hidden {
-    opacity: 0;
-    z-index: 0;
-    pointer-events: none;
-    /* Position will be set dynamically via JavaScript to avoid shuffling */
+    opacity: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transform: translateX(0px) scale(0) !important;
+    transition: none !important; /* Completely disable all transitions for hidden cards */
 }
 
 .game-image {
@@ -572,7 +670,19 @@ main::-webkit-scrollbar-thumb:hover {
     transition: transform 0.4s ease;
 }
 
+.friend-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+
 .game-card:hover .game-image {
+    transform: scale(1.05);
+}
+
+.friend-card:hover .friend-image {
     transform: scale(1.05);
 }
 
