@@ -5,6 +5,9 @@ let inputManager;
 let animationFrameId;
 let lastInputMethod = null;
 let lastButtonState = false;
+let navAudio;
+let carouselAudio;
+let carouselNavAudio;
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,6 +19,21 @@ document.addEventListener('DOMContentLoaded', () => {
 function init() {
     // Create unified input manager (gamepad + keyboard)
     inputManager = new InputManager();
+    
+    // Load navigation sound
+    navAudio = new Audio('assets/sounds/nav.mp3');
+    navAudio.preload = 'auto';
+    navAudio.volume = 0.5; // Set volume to 50%
+    
+    // Load carousel sound
+    carouselAudio = new Audio('assets/sounds/carousel2.mp3');
+    carouselAudio.preload = 'auto';
+    carouselAudio.volume = 0.5; // Set volume to 50%
+    
+    // Load carousel navigation sound
+    carouselNavAudio = new Audio('assets/sounds/carousel.mp3');
+    carouselNavAudio.preload = 'auto';
+    carouselNavAudio.volume = 0.5; // Set volume to 50%
     
     // Start update loop
     update();
@@ -75,6 +93,41 @@ function handleScale() {
         console.error('App container not found - check HTML structure');
     }
 }
+
+// Function to play navigation sound
+function playNavSound() {
+    if (navAudio) {
+        navAudio.currentTime = 0; // Reset to beginning
+        navAudio.play().catch(error => {
+            console.log('Audio play failed:', error);
+        });
+    }
+}
+
+// Function to play carousel sound
+function playCarouselSound() {
+    if (carouselAudio) {
+        carouselAudio.currentTime = 0; // Reset to beginning
+        carouselAudio.play().catch(error => {
+            console.log('Carousel audio play failed:', error);
+        });
+    }
+}
+
+// Function to play carousel navigation sound
+function playCarouselNavSound() {
+    if (carouselNavAudio) {
+        carouselNavAudio.currentTime = 0; // Reset to beginning
+        carouselNavAudio.play().catch(error => {
+            console.log('Carousel navigation audio play failed:', error);
+        });
+    }
+}
+
+// Make sound functions available globally
+window.playNavSound = playNavSound;
+window.playCarouselSound = playCarouselSound;
+window.playCarouselNavSound = playCarouselNavSound;
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {

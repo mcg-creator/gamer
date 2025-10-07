@@ -14,23 +14,18 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 #app {
-    width: 1280px;
-    height: 720px;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
     position: relative;
-    overflow: hidden;
 }
 
 #game-container {
-    width: 1280px;
+    width: 100vw;
     height: 720px;
     position: relative;
     display: flex;
@@ -61,6 +56,10 @@ body {
 
 #game-container.bg-rainworld {
     background-image: url('assets/bg/rainworld.png');
+}
+
+#game-container.bg-copilot {
+    background-image: url('assets/bg/copilot/copilot.png');
 }
 
 
@@ -451,7 +450,7 @@ main::-webkit-scrollbar-thumb:hover {
 
 #bottom-controls {
     position: absolute;
-    bottom: 65px;
+    bottom: 50px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -508,6 +507,11 @@ main::-webkit-scrollbar-thumb:hover {
     height: 560px;
 }
 
+/* Notify carousel has same height as friends */
+.notify-carousel-wrapper {
+    height: 560px;
+}
+
 .carousel-track {
     display: flex;
     align-items: center;
@@ -544,6 +548,19 @@ main::-webkit-scrollbar-thumb:hover {
     background: transparent;
 }
 
+/* Notify cards have same dimensions as friend cards */
+.notify-card {
+    position: absolute;
+    width: 400px;
+    height: 560px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: none;
+    background: transparent;
+}
+
 /* Friend card positioning for 5 visible cards (3 center + 2 peek) */
 .friend-card.center {
     transform: translateX(0) scale(1.2);
@@ -568,7 +585,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .friend-card.far-left {
-    transform: translateX(-652px) scale(1.0);
+    transform: translateX(-652px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -576,7 +593,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .friend-card.far-right {
-    transform: translateX(652px) scale(1.0);
+    transform: translateX(652px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -600,11 +617,74 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .friends-carousel-wrapper:not(.carousel-inactive) .friend-card.far-left {
-    transform: translateX(-696px) scale(1.0);
+    transform: translateX(-696px) scale(0.8);
 }
 
 .friends-carousel-wrapper:not(.carousel-inactive) .friend-card.far-right {
-    transform: translateX(696px) scale(1.0);
+    transform: translateX(696px) scale(0.8);
+}
+
+/* Notify card positioning (same as friend cards) */
+.notify-card.center {
+    transform: translateX(0) scale(1.2) !important;
+    z-index: 5;
+    filter: brightness(1);
+}
+
+.notify-card.left {
+    transform: translateX(-332px) scale(1.0) !important;
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.notify-card.right {
+    transform: translateX(332px) scale(1.0) !important;
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.notify-card.far-left {
+    transform: translateX(-652px) scale(0.8) !important;
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.notify-card.far-right {
+    transform: translateX(652px) scale(0.8) !important;
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* When notify carousel is not active, make center card same size as sides */
+.carousel-inactive .notify-card.center {
+    transform: translateX(0) scale(1.0) !important;
+    filter: brightness(1.0);
+    opacity: 1.0;
+}
+
+/* When notify carousel is active, push side images further out to maintain spacing */
+.notify-carousel-wrapper:not(.carousel-inactive) .notify-card.left {
+    transform: translateX(-376px) scale(1.0) !important;
+}
+
+.notify-carousel-wrapper:not(.carousel-inactive) .notify-card.right {
+    transform: translateX(376px) scale(1.0) !important;
+}
+
+.notify-carousel-wrapper:not(.carousel-inactive) .notify-card.far-left {
+    transform: translateX(-696px) scale(0.8) !important;
+}
+
+.notify-carousel-wrapper:not(.carousel-inactive) .notify-card.far-right {
+    transform: translateX(696px) scale(0.8) !important;
 }
 
 .game-card.center {
@@ -650,8 +730,31 @@ main::-webkit-scrollbar-thumb:hover {
     z-index: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
-    transform: translateX(0px) scale(0) !important;
-    transition: none !important; /* Completely disable all transitions for hidden cards */
+    transition: none !important; /* No transitions for hidden cards - instant hiding */
+}
+
+.friend-card.hidden.hidden-left {
+    transform: translateX(-1500px) scale(0.5) !important;
+}
+
+.friend-card.hidden.hidden-right {
+    transform: translateX(1500px) scale(0.5) !important;
+}
+
+.notify-card.hidden {
+    opacity: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: none !important; /* No transitions for hidden cards - instant hiding */
+}
+
+.notify-card.hidden.hidden-left {
+    transform: translateX(-1500px) scale(0.5) !important;
+}
+
+.notify-card.hidden.hidden-right {
+    transform: translateX(1500px) scale(0.5) !important;
 }
 
 .game-card.hidden {
@@ -659,8 +762,15 @@ main::-webkit-scrollbar-thumb:hover {
     z-index: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
-    transform: translateX(0px) scale(0) !important;
-    transition: none !important; /* Completely disable all transitions for hidden cards */
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.game-card.hidden.hidden-left {
+    transform: translateX(-2000px) scale(0.5) !important;
+}
+
+.game-card.hidden.hidden-right {
+    transform: translateX(2000px) scale(0.5) !important;
 }
 
 .game-image {
@@ -677,6 +787,13 @@ main::-webkit-scrollbar-thumb:hover {
     transition: transform 0.4s ease;
 }
 
+.notify-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
 
 .game-card:hover .game-image {
     transform: scale(1.05);
@@ -684,6 +801,94 @@ main::-webkit-scrollbar-thumb:hover {
 
 .friend-card:hover .friend-image {
     transform: scale(1.05);
+}
+
+.notify-card:hover .notify-image {
+    transform: scale(1.05);
+}
+
+.notify-card:hover .notify-image {
+    transform: scale(1.05);
+}
+
+/* ───────────────────────────────────────────── */
+/* GALLERY CARDS                                */
+/* ───────────────────────────────────────────── */
+
+.gallery-card {
+    position: absolute;
+    width: 800px;
+    height: 460px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: none;
+    background: transparent;
+}
+
+.gallery-card.center {
+    transform: translateX(0) scale(1.25);
+    z-index: 3;
+    filter: brightness(1);
+}
+
+/* When carousel is not active, make center card same size as sides */
+.carousel-inactive .gallery-card.center {
+    transform: translateX(0) scale(1.0);
+    filter: brightness(1.0);
+    opacity: 1.0;
+}
+
+/* When carousel is active, push side images further out to maintain spacing */
+.gallery-carousel-wrapper:not(.carousel-inactive) .gallery-card.left {
+    transform: translateX(-820px) scale(1.0);
+}
+
+.gallery-carousel-wrapper:not(.carousel-inactive) .gallery-card.right {
+    transform: translateX(820px) scale(1.0);
+}
+
+.gallery-card.left {
+    transform: translateX(-720px) scale(1.0);
+    z-index: 1;
+    filter: brightness(1.0);
+    opacity: 1.0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.gallery-card.right {
+    transform: translateX(720px) scale(1.0);
+    z-index: 1;
+    filter: brightness(1.0);
+    opacity: 1.0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.gallery-card.hidden {
+    opacity: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.gallery-card.hidden.hidden-left {
+    transform: translateX(-2000px) scale(0.5) !important;
+}
+
+.gallery-card.hidden.hidden-right {
+    transform: translateX(2000px) scale(0.5) !important;
+}
+
+.gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: none;
+    border-radius: 0;
+    border: none;
+    background: transparent;
 }
 
 .game-info {
@@ -754,4 +959,334 @@ main::-webkit-scrollbar-thumb:hover {
     justify-content: center;
     font-size: 2rem;
     color: #eee;
+}
+
+/* ───────────────────────────────────────────── */
+/* SETTINGS CAROUSEL STYLES                      */
+/* ───────────────────────────────────────────── */
+
+/* Settings carousel wrapper follows same pattern as other carousels */
+.settings-carousel-wrapper {
+    height: 560px; /* Same as notify carousel */
+}
+
+.settings-card, .settings-stack-card {
+    position: absolute;
+    width: 400px;
+    height: 560px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: none;
+    background: transparent;
+}
+
+/* Settings card positioning - 5 visible cards like notify carousel */
+.settings-card.center {
+    transform: translateX(0) scale(1.2);
+    z-index: 5;
+    filter: brightness(1);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.settings-stack-card.center {
+    transform: translateX(0) scale(1.0);
+    z-index: 5;
+    filter: brightness(1);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.settings-card.left, .settings-stack-card.left {
+    transform: translateX(-332px) scale(1.0);
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.settings-card.right, .settings-stack-card.right {
+    transform: translateX(332px) scale(1.0);
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.settings-card.far-left, .settings-stack-card.far-left {
+    transform: translateX(-652px) scale(0.8);
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.settings-card.far-right, .settings-stack-card.far-right {
+    transform: translateX(652px) scale(0.8);
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.settings-card.hidden, .settings-stack-card.hidden {
+    opacity: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.settings-card.hidden.hidden-left, .settings-stack-card.hidden.hidden-left {
+    transform: translateX(-1000px) scale(0.5) !important;
+}
+
+.settings-card.hidden.hidden-right, .settings-stack-card.hidden.hidden-right {
+    transform: translateX(1000px) scale(0.5) !important;
+}
+
+/* When carousel is not active, make center card same size as sides */
+.carousel-inactive .settings-card.center,
+.carousel-inactive .settings-stack-card.center {
+    transform: translateX(0) scale(1.0);
+    filter: brightness(1.0);
+    opacity: 1.0;
+}
+
+/* When carousel is active, push side images further out to maintain spacing */
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-card.left,
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.left {
+    transform: translateX(-376px) scale(1.0);
+}
+
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-card.right,
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.right {
+    transform: translateX(376px) scale(1.0);
+}
+
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-card.far-left,
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.far-left {
+    transform: translateX(-696px) scale(0.8);
+}
+
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-card.far-right,
+.settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.far-right {
+    transform: translateX(696px) scale(0.8);
+}
+
+.settings-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.settings-card:hover .settings-image,
+.settings-stack-card:hover .settings-image {
+    transform: scale(1.05);
+}
+
+/* Stack container for vertical layout */
+.stack-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    gap: 0px;
+    padding: 5px 0px 0px 0px; /* Add top padding to prevent clipping */
+    box-sizing: border-box;
+    position: relative;
+    top: -5px; /* Move stacks up to align with single cards */
+}
+
+.stack-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-top: -95px; /* Overlap items more to reduce spacing */
+}
+
+.stack-item:first-child {
+    margin-top: 0; /* Don't apply negative margin to first item */
+}
+
+.stack-item-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+/* Only the individually focused item should scale */
+.stack-item.focused {
+    transform: scale(1.15);
+    z-index: 3;
+    border-radius: 8px;
+}
+
+/* Non-focused items in the stack stay at normal size */
+.stack-item:not(.focused) {
+    transform: scale(1.0);
+    z-index: 1;
+}
+
+.stack-item.focused .stack-item-image {
+    border-radius: 8px;
+}
+
+/* Center card gets special highlighting */
+.settings-card.center,
+.settings-stack-card.center {
+    box-shadow: none;
+}
+
+/* ───────────────────────────────────────────── */
+/* COPILOT CAROUSEL STYLES                       */
+/* ───────────────────────────────────────────── */
+
+/* Copilot carousel wrapper follows same pattern as settings carousel */
+.copilot-carousel-wrapper {
+    height: 560px; /* Same as notify and settings carousel */
+}
+
+.copilot-card, .copilot-stack-card {
+    position: absolute;
+    width: 400px;
+    height: 560px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: none;
+    background: transparent;
+}
+
+/* Copilot card positioning - 5 visible cards like notify carousel */
+.copilot-card.center {
+    transform: translateX(0) scale(1.2);
+    z-index: 5;
+    filter: brightness(1);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.copilot-stack-card.center {
+    transform: translateX(0) scale(1.0);
+    z-index: 5;
+    filter: brightness(1);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.copilot-card.left, .copilot-stack-card.left {
+    transform: translateX(-332px) scale(1.0);
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.copilot-card.right, .copilot-stack-card.right {
+    transform: translateX(332px) scale(1.0);
+    z-index: 3;
+    filter: brightness(0.9);
+    opacity: 1.0;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.copilot-card.far-left, .copilot-stack-card.far-left {
+    transform: translateX(-652px) scale(0.8);
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.copilot-card.far-right, .copilot-stack-card.far-right {
+    transform: translateX(652px) scale(0.8);
+    z-index: 1;
+    filter: brightness(0.7);
+    opacity: 0.7;
+    visibility: visible;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.copilot-card.hidden, .copilot-stack-card.hidden {
+    opacity: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.copilot-card.hidden.hidden-left, .copilot-stack-card.hidden.hidden-left {
+    transform: translateX(-1000px) scale(0.5) !important;
+}
+
+.copilot-card.hidden.hidden-right, .copilot-stack-card.hidden.hidden-right {
+    transform: translateX(1000px) scale(0.5) !important;
+}
+
+/* When carousel is not active, make center card same size as sides */
+.carousel-inactive .copilot-card.center,
+.carousel-inactive .copilot-stack-card.center {
+    transform: translateX(0) scale(1.0);
+    filter: brightness(1.0);
+    opacity: 1.0;
+}
+
+/* When carousel is active, push side images further out to maintain spacing */
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.left,
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.left {
+    transform: translateX(-376px) scale(1.0);
+}
+
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.right,
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.right {
+    transform: translateX(376px) scale(1.0);
+}
+
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.far-left,
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.far-left {
+    transform: translateX(-696px) scale(0.8);
+}
+
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.far-right,
+.copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.far-right {
+    transform: translateX(696px) scale(0.8);
+}
+
+.copilot-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.copilot-card:hover .copilot-image,
+.copilot-stack-card:hover .copilot-image {
+    transform: scale(1.05);
+}
+
+/* Center card gets special highlighting */
+.copilot-card.center,
+.copilot-stack-card.center {
+    box-shadow: none;
 }
