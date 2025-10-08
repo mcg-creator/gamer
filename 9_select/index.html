@@ -1942,13 +1942,25 @@
           if (axisX > deadzone) {
             selectedIndex = (selectedIndex + 1) % tabs.length;
             renderNav();
+            // Play navigation sound for gamepad
+            if (window.playNavSound) {
+              window.playNavSound();
+            }
           } else if (axisX < -deadzone) {
             selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
             renderNav();
-          } else if (axisY > deadzone && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings")) {
+            // Play navigation sound for gamepad
+            if (window.playNavSound) {
+              window.playNavSound();
+            }
+          } else if (axisY > deadzone && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings" || tabs[selectedIndex] === "copilot")) {
             // Move focus down to carousel
             navigationFocus = "carousel";
             updateFocusVisuals();
+            // Play carousel sound when moving from nav to carousel via gamepad
+            if (window.playCarouselSound) {
+              window.playCarouselSound();
+            }
           }
         } else if (navigationFocus === "carousel") {
           // Carousel focused - left/right controls items, up returns to nav
@@ -1965,8 +1977,8 @@
               navigateNotifyCarousel('right');
             } else if (tabs[selectedIndex] === "settings") {
               navigateSettingsCarousel('right');
-            } else if (tabs[selectedIndex] === "settings") {
-              navigateSettingsCarousel('right');
+            } else if (tabs[selectedIndex] === "copilot") {
+              navigateCopilotCarousel('right');
             }
             // Play carousel navigation sound
             if (window.playCarouselNavSound) {
@@ -1985,16 +1997,28 @@
               navigateNotifyCarousel('left');
             } else if (tabs[selectedIndex] === "settings") {
               navigateSettingsCarousel('left');
+            } else if (tabs[selectedIndex] === "copilot") {
+              navigateCopilotCarousel('left');
             }
             // Play carousel navigation sound
             if (window.playCarouselNavSound) {
               window.playCarouselNavSound();
             }
           } else if (axisY < -deadzone) {
-            // Move focus back up to navigation, or navigate stack items for settings
+            // Move focus back up to navigation, or navigate stack items for settings/copilot
             if (tabs[selectedIndex] === "settings") {
               // Try to navigate within stack first, if it returns false then go to nav bar
               if (!navigateStackItems('up')) {
+                navigationFocus = "nav";
+                updateFocusVisuals();
+                // Play nav sound when moving from carousel to nav
+                if (window.playNavSound) {
+                  window.playNavSound();
+                }
+              }
+            } else if (tabs[selectedIndex] === "copilot") {
+              // Try to navigate within stack first, if it returns false then go to nav bar
+              if (!navigateCopilotStackItems('up')) {
                 navigationFocus = "nav";
                 updateFocusVisuals();
                 // Play nav sound when moving from carousel to nav
@@ -2011,9 +2035,11 @@
               }
             }
           } else if (axisY > deadzone) {
-            // Navigate stack items for settings, but don't cycle at bottom
+            // Navigate stack items for settings/copilot, but don't cycle at bottom
             if (tabs[selectedIndex] === "settings") {
               navigateStackItems('down'); // If it returns false, just stay at bottom item
+            } else if (tabs[selectedIndex] === "copilot") {
+              navigateCopilotStackItems('down'); // If it returns false, just stay at bottom item
             }
           }
         }
@@ -2553,6 +2579,12 @@
       // Update the displayed images and focus states
       updateSettingsCarousel();
       updateBottomControls(); // Update button directions when navigating within stack
+      
+      // Play carousel navigation sound for stack item focus
+      if (window.playCarouselNavSound) {
+        window.playCarouselNavSound();
+      }
+      
       return true; // Handled the navigation
     }
     
@@ -2592,6 +2624,12 @@
       // Update the displayed images and focus states
       updateCopilotCarousel();
       updateBottomControls(); // Update button directions when navigating within stack
+      
+      // Play carousel navigation sound for stack item focus
+      if (window.playCarouselNavSound) {
+        window.playCarouselNavSound();
+      }
+      
       return true; // Handled the navigation
     }
 
