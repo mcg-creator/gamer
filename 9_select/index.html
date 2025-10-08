@@ -2130,6 +2130,18 @@
     let copilotItems = [];
     let currentCopilotIndex = 0;
     
+    // Preload focus images for better performance on handheld devices
+    const preloadedFocusImages = new Map();
+    
+    function preloadFocusImage(imagePath) {
+      if (!preloadedFocusImages.has(imagePath)) {
+        const img = new Image();
+        img.src = imagePath;
+        preloadedFocusImages.set(imagePath, img);
+        console.log(`Preloaded focus image: ${imagePath}`);
+      }
+    }
+    
     // Settings configuration with single items and stacked columns
     const settingsConfig = [
       {
@@ -2256,6 +2268,17 @@
       console.log('⚙️ Initializing settings controls...');
       settings = [...settingsConfig];
       console.log(`Created ${settings.length} settings controls:`, settings.map(s => s.title));
+      
+      // Preload focus images for all settings items
+      settings.forEach(setting => {
+        if (setting.type === 'single') {
+          preloadFocusImage(`assets/settings/${setting.id}_focus.png`);
+        } else if (setting.type === 'stack' && setting.items) {
+          setting.items.forEach(item => {
+            preloadFocusImage(`assets/settings/${item.id}_focus.png`);
+          });
+        }
+      });
       
       createSettingsCards();
       updateSettingsCarousel();
@@ -2506,7 +2529,26 @@
             // Only the selected item in the center card gets focus styling
             item.classList.add('focused');
             if (itemImage) {
-              itemImage.src = `assets/settings/${itemData.id}_focus.png`;
+              // Enhanced image loading for ROG Ally compatibility
+              const focusImagePath = `assets/settings/${itemData.id}_focus.png`;
+              
+              // Check if we have a preloaded image
+              if (preloadedFocusImages.has(focusImagePath)) {
+                itemImage.src = focusImagePath;
+                console.log(`Using preloaded focus image for ${itemData.id}`);
+              } else {
+                // Fallback with cache busting and error handling
+                const focusImageSrc = `${focusImagePath}?v=${Date.now()}`;
+                itemImage.onerror = function() {
+                  console.warn(`Failed to load focus image: ${focusImageSrc}, falling back to regular image`);
+                  this.src = `assets/settings/${itemData.id}.png`;
+                };
+                itemImage.onload = function() {
+                  console.log(`Successfully loaded focus image for ${itemData.id}`);
+                };
+                itemImage.src = focusImageSrc;
+                console.log(`Loading focus image for ${itemData.id}: ${focusImageSrc}`);
+              }
             }
           } else {
             if (itemImage) {

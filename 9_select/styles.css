@@ -1131,19 +1131,29 @@ main::-webkit-scrollbar-thumb:hover {
 
 /* Only the individually focused item should scale */
 .stack-item.focused {
+    -webkit-transform: scale(1.15);
     transform: scale(1.15);
     z-index: 3;
     border-radius: 8px;
+    /* Force hardware acceleration for better rendering on handheld devices */
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 /* Non-focused items in the stack stay at normal size */
 .stack-item:not(.focused) {
+    -webkit-transform: scale(1.0);
     transform: scale(1.0);
     z-index: 1;
+    will-change: auto;
 }
 
 .stack-item.focused .stack-item-image {
     border-radius: 8px;
+    /* Ensure image loading is prioritized */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 /* Center card gets special highlighting */
