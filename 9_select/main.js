@@ -66,7 +66,6 @@ function setupArrowKeyListeners() {
     document.addEventListener('keydown', (e) => {
         if (e.key.startsWith('Arrow')) {
             console.log(`⌨️ Arrow key detected: ${e.key}`);
-            highlightArrowIndicator(e.key, true);
             
             // Don't play any sounds here - let the navigation system in HTML handle all audio
             // The HTML navigation system already has the correct audio logic:
@@ -79,35 +78,9 @@ function setupArrowKeyListeners() {
 
     document.addEventListener('keyup', (e) => {
         if (e.key.startsWith('Arrow')) {
-            highlightArrowIndicator(e.key, false);
+            // Visual indicators removed
         }
     });
-}
-
-// Highlight arrow key indicators for visual feedback
-function highlightArrowIndicator(key, pressed) {
-    const indicators = {
-        'ArrowUp': 'up-indicator',
-        'ArrowDown': 'down-indicator',
-        'ArrowLeft': 'left-indicator',
-        'ArrowRight': 'right-indicator'
-    };
-
-    const indicatorId = indicators[key];
-    if (!indicatorId) return;
-
-    const element = document.getElementById(indicatorId);
-    if (element) {
-        if (pressed) {
-            element.style.background = '#0f7b0f';
-            element.style.color = 'white';
-            element.style.transform = 'scale(1.1)';
-        } else {
-            element.style.background = '#333';
-            element.style.color = 'white';
-            element.style.transform = 'scale(1.0)';
-        }
-    }
 }
 
 // Main update loop
