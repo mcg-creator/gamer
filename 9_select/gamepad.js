@@ -63,10 +63,21 @@ class GamepadManager {
         this.currentState.clear();
 
         const gamepads = navigator.getGamepads();
+        let gamepadFound = false;
         for (const gamepad of gamepads) {
             if (gamepad) {
                 this.currentState.set(gamepad.index, gamepad);
+                gamepadFound = true;
+                // Debug: Log gamepad detection every few seconds
+                if (Math.random() < 0.01) { // ~1% chance per frame to avoid spam
+                    console.log(`🎮 Gamepad detected: ${gamepad.id}`);
+                }
             }
+        }
+
+        // Debug: Log if no gamepad found occasionally
+        if (!gamepadFound && Math.random() < 0.01) {
+            console.log('🎮 No gamepad detected in update loop');
         }
 
         // Handle d-pad to arrow key mapping
@@ -87,6 +98,14 @@ class GamepadManager {
 
     // Handle d-pad to arrow key mapping
     handleDpadToArrowKeys(gamepadIndex = 0) {
+        const gamepad = this.currentState.get(gamepadIndex);
+        if (!gamepad) return;
+
+        // Debug: Log d-pad button states occasionally
+        if (Math.random() < 0.01) {
+            console.log(`🎮 D-pad states: UP=${gamepad.buttons[12]?.pressed}, DOWN=${gamepad.buttons[13]?.pressed}, LEFT=${gamepad.buttons[14]?.pressed}, RIGHT=${gamepad.buttons[15]?.pressed}`);
+        }
+
         // Check each d-pad direction
         for (const [dpadButton, arrowKey] of Object.entries(this.dpadToKeyMap)) {
             const justPressedNow = this.justPressed(dpadButton, gamepadIndex);

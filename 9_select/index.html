@@ -1952,10 +1952,15 @@
 
 
 
-      // Deadzone for analog sticks
-      const deadzone = 0.5;
+      // Deadzone for analog sticks - reduced for better sensitivity
+      const deadzone = 0.15;
       const axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
       const axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
+
+      // Debug: Log analog stick values occasionally
+      if (Math.random() < 0.01 && (Math.abs(gp.axes[0]) > 0.1 || Math.abs(gp.axes[1]) > 0.1)) {
+        console.log(`🕹️ Analog stick: X=${gp.axes[0].toFixed(2)}, Y=${gp.axes[1].toFixed(2)}, filtered X=${axisX.toFixed(2)}, Y=${axisY.toFixed(2)}`);
+      }
 
 
 

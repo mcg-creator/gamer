@@ -45,6 +45,20 @@ function init() {
     console.log('Keyboard Controls:', inputManager.getKeyboardControls());
     console.log('Press A/D button to test rumble!');
     console.log('Use D-pad to test arrow key simulation!');
+    
+    // Add gamepad testing
+    setTimeout(() => {
+        console.log('🎮 Testing gamepad detection...');
+        const gamepads = navigator.getGamepads();
+        console.log('Gamepads:', gamepads);
+        if (gamepads && gamepads[0]) {
+            console.log('First gamepad:', gamepads[0].id);
+            console.log('Buttons count:', gamepads[0].buttons.length);
+            console.log('Axes count:', gamepads[0].axes.length);
+        } else {
+            console.log('❌ No gamepad detected. Make sure your ASUS ROG Ally is connected and try pressing a button.');
+        }
+    }, 2000);
 }
 
 // Setup arrow key event listeners for testing
@@ -181,6 +195,34 @@ function playCarouselNavSound() {
 window.playNavSound = playNavSound;
 window.playCarouselSound = playCarouselSound;
 window.playCarouselNavSound = playCarouselNavSound;
+
+// Add global gamepad test function
+window.testGamepad = function() {
+    console.log('🎮 Manual gamepad test...');
+    const gamepads = navigator.getGamepads();
+    console.log('Gamepads array:', gamepads);
+    
+    for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+            const gp = gamepads[i];
+            console.log(`Gamepad ${i}:`, gp.id);
+            console.log(`  Buttons (${gp.buttons.length}):`, gp.buttons.map((b, idx) => `${idx}:${b.pressed}`).filter(b => b.includes('true')));
+            console.log(`  Axes (${gp.axes.length}):`, gp.axes.map((a, idx) => `${idx}:${a.toFixed(3)}`));
+            
+            // Test d-pad specifically
+            console.log(`  D-pad: UP=${gp.buttons[12]?.pressed}, DOWN=${gp.buttons[13]?.pressed}, LEFT=${gp.buttons[14]?.pressed}, RIGHT=${gp.buttons[15]?.pressed}`);
+        }
+    }
+    
+    if (!gamepads || !gamepads[0]) {
+        console.log('❌ No gamepad detected. Make sure to:');
+        console.log('  1. Connect your ASUS ROG Ally');
+        console.log('  2. Press any button on the gamepad first');
+        console.log('  3. Make sure the page has focus');
+    }
+};
+
+console.log('💡 Type testGamepad() in console to manually test gamepad detection');
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
