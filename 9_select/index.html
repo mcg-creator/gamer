@@ -1918,7 +1918,7 @@
     });
 
     // Enhanced Gamepad support with two-level navigation
-    let lastGamepadInput = { axes: [0, 0], buttons: [] };
+    let lastGamepadInput = { axes: [0, 0], buttons: [], lastNavTime: 0 };
     
     function handleGamepadInput() {
       const gamepads = navigator.getGamepads();
@@ -1970,9 +1970,15 @@
         axisY = 1;
       }
 
-      // Prevent rapid-fire input by checking if input changed
-      const inputChanged = Math.abs(axisX - lastGamepadInput.axes[0]) > 0.1 || 
-                          Math.abs(axisY - lastGamepadInput.axes[1]) > 0.1;
+      // Prevent rapid-fire input with debouncing
+      const currentTime = Date.now();
+      const minTimeBetweenInputs = 200; // 200ms minimum between inputs
+      
+      // Check if enough time has passed since last navigation
+      const timeSinceLastInput = currentTime - lastGamepadInput.lastNavTime;
+      const inputChanged = (axisX !== 0 || axisY !== 0) && timeSinceLastInput > minTimeBetweenInputs;
+      
+      console.log('🎮 Input check - axisX:', axisX, 'axisY:', axisY, 'timeSince:', timeSinceLastInput, 'inputChanged:', inputChanged);
 
       if (inputChanged) {
         console.log('🎮 Input changed, axisX:', axisX, 'axisY:', axisY, 'navigationFocus:', navigationFocus);
@@ -2140,6 +2146,11 @@
       // Store current state for next comparison
       lastGamepadInput.axes = [axisX, axisY];
       lastGamepadInput.buttons = gp.buttons.map(b => b?.pressed || false);
+      
+      // Update timestamp when navigation actually happens
+      if (inputChanged) {
+        lastGamepadInput.lastNavTime = currentTime;
+      }
     }
 
     // Poll gamepad input
