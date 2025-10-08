@@ -1933,96 +1933,14 @@
         return;
       }
 
-      console.log('🎮 Gamepad detected:', gp.id);
-      console.log('🎮 Total buttons:', gp.buttons.length);
-      console.log('🎮 Total axes:', gp.axes.length);
-      console.log('🎮 All axes values:', gp.axes);
-      
-      // Log all pressed buttons to identify d-pad mapping
-      const pressedButtons = [];
-      for (let i = 0; i < gp.buttons.length; i++) {
-        if (gp.buttons[i] && gp.buttons[i].pressed) {
-          pressedButtons.push(`${i}(${gp.buttons[i].value})`);
-        }
-      }
-      if (pressedButtons.length > 0) {
-        console.log('🎮 BUTTONS PRESSED:', pressedButtons.join(', '));
-      }
-      
-      // Check if any axes are changing (d-pad might be on different axes)
-      const activeAxes = [];
-      for (let i = 0; i < gp.axes.length; i++) {
-        if (Math.abs(gp.axes[i]) > 0.1) {
-          activeAxes.push(`axis${i}:${gp.axes[i].toFixed(2)}`);
-        }
-      }
-      if (activeAxes.length > 0) {
-        console.log('🎮 ACTIVE AXES:', activeAxes.join(', '));
-      }
+
 
       // Deadzone for analog sticks
       const deadzone = 0.5;
-      let axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
-      let axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
-      
-      // Also check other common d-pad axes
-      if (gp.axes[2] && Math.abs(gp.axes[2]) > 0.1) {
-        console.log('🎮 Axis 2 (possible d-pad X):', gp.axes[2]);
-        if (Math.abs(gp.axes[2]) > Math.abs(axisX)) {
-          axisX = gp.axes[2];
-        }
-      }
-      if (gp.axes[3] && Math.abs(gp.axes[3]) > 0.1) {
-        console.log('🎮 Axis 3 (possible d-pad Y):', gp.axes[3]);
-        if (Math.abs(gp.axes[3]) > Math.abs(axisY)) {
-          axisY = gp.axes[3];
-        }
-      }
-      if (gp.axes[6] && Math.abs(gp.axes[6]) > 0.1) {
-        console.log('🎮 Axis 6 (possible d-pad X):', gp.axes[6]);
-        if (Math.abs(gp.axes[6]) > Math.abs(axisX)) {
-          axisX = gp.axes[6];
-        }
-      }
-      if (gp.axes[7] && Math.abs(gp.axes[7]) > 0.1) {
-        console.log('🎮 Axis 7 (possible d-pad Y):', gp.axes[7]);
-        if (Math.abs(gp.axes[7]) > Math.abs(axisY)) {
-          axisY = gp.axes[7];
-        }
-      }
+      const axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
+      const axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
 
-      // Check D-pad buttons - simplified approach
-      // If any button is pressed, try to map it to direction
-      let dpadPressed = false;
-      
-      for (let i = 0; i < gp.buttons.length; i++) {
-        if (gp.buttons[i] && gp.buttons[i].pressed) {
-          console.log('🎮 Button', i, 'pressed - checking for d-pad mapping');
-          
-          // Common d-pad mappings - try multiple possibilities
-          if ([14, 0, 6].includes(i)) { // Left possibilities
-            console.log('🎮 Mapping button', i, 'to LEFT');
-            axisX = -1;
-            dpadPressed = true;
-            break;
-          } else if ([15, 2, 7].includes(i)) { // Right possibilities
-            console.log('🎮 Mapping button', i, 'to RIGHT');
-            axisX = 1;
-            dpadPressed = true;
-            break;
-          } else if ([12, 1, 4].includes(i)) { // Up possibilities
-            console.log('🎮 Mapping button', i, 'to UP');
-            axisY = -1;
-            dpadPressed = true;
-            break;
-          } else if ([13, 3, 5].includes(i)) { // Down possibilities
-            console.log('🎮 Mapping button', i, 'to DOWN');
-            axisY = 1;
-            dpadPressed = true;
-            break;
-          }
-        }
-      }
+
 
       // Prevent rapid-fire input with debouncing
       const currentTime = Date.now();
@@ -2031,34 +1949,23 @@
       // Check if enough time has passed since last navigation
       const timeSinceLastInput = currentTime - lastGamepadInput.lastNavTime;
       const inputChanged = (axisX !== 0 || axisY !== 0) && timeSinceLastInput > minTimeBetweenInputs;
-      
-      console.log('🎮 Input check - axisX:', axisX, 'axisY:', axisY, 'timeSince:', timeSinceLastInput, 'inputChanged:', inputChanged);
 
       if (inputChanged) {
-        console.log('🎮 Input changed, axisX:', axisX, 'axisY:', axisY, 'navigationFocus:', navigationFocus);
         if (navigationFocus === "nav") {
           // Navigation bar focused - left/right controls tabs, down enters carousel
           if (axisX > 0) {
-            console.log('🎮 Gamepad: Moving right in nav, selectedIndex:', selectedIndex);
             selectedIndex = (selectedIndex + 1) % tabs.length;
             renderNav();
             // Play navigation sound for gamepad
             if (window.playNavSound) {
-              console.log('🔊 Playing nav sound (gamepad right)');
               window.playNavSound();
-            } else {
-              console.log('❌ playNavSound not available');
             }
           } else if (axisX < 0) {
-            console.log('🎮 Gamepad: Moving left in nav, selectedIndex:', selectedIndex);
             selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
             renderNav();
             // Play navigation sound for gamepad
             if (window.playNavSound) {
-              console.log('🔊 Playing nav sound (gamepad left)');
               window.playNavSound();
-            } else {
-              console.log('❌ playNavSound not available');
             }
           } else if (axisY > 0 && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings" || tabs[selectedIndex] === "copilot")) {
             // Move focus down to carousel
