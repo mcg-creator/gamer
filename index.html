@@ -1,0 +1,2656 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROG Ally Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <div id="game-container">
+      <div id="windows-shell">
+        <div id="app-container">
+          
+          <!-- Top Navigation (inside app-container) -->
+          <nav id="top-nav"></nav>
+          
+          <!-- App Content -->
+          <main id="content">
+            <!-- Games Carousel -->
+            <div id="games-carousel" class="carousel-container">
+              <div class="games-carousel-wrapper carousel-wrapper">
+                <div class="games-carousel-track carousel-track">
+                  <!-- Game cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Apps Carousel -->
+            <div id="apps-carousel" class="carousel-container" style="display: none;">
+              <div class="apps-carousel-wrapper carousel-wrapper">
+                <div class="apps-carousel-track carousel-track">
+                  <!-- App cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Friends Carousel -->
+            <div id="friends-carousel" class="carousel-container" style="display: none;">
+              <div class="friends-carousel-wrapper carousel-wrapper">
+                <div class="friends-carousel-track carousel-track">
+                  <!-- Friend cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Notify Carousel -->
+            <div id="notify-carousel" class="carousel-container" style="display: none;">
+              <div class="notify-carousel-wrapper carousel-wrapper">
+                <div class="notify-carousel-track carousel-track">
+                  <!-- Notify cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Gallery Carousel -->
+            <div id="gallery-carousel" class="carousel-container" style="display: none;">
+              <div class="gallery-carousel-wrapper carousel-wrapper">
+                <div class="gallery-carousel-track carousel-track">
+                  <!-- Gallery cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Settings Carousel -->
+            <div id="settings-carousel" class="carousel-container" style="display: none;">
+              <div class="settings-carousel-wrapper carousel-wrapper">
+                <div class="settings-carousel-track carousel-track">
+                  <!-- Settings cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Copilot Carousel -->
+            <div id="copilot-carousel" class="carousel-container" style="display: none;">
+              <div class="copilot-carousel-wrapper carousel-wrapper">
+                <div class="copilot-carousel-track carousel-track">
+                  <!-- Copilot cards will be dynamically generated here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Default Content for Other Tabs -->
+            <div id="default-content" style="display: none;">Content</div>
+          </main>
+
+          <!-- Bottom Controls -->
+          <div id="bottom-controls">
+            <img id="control-image" src="" alt="Controls" />
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Dynamic game detection system
+    let games = [];
+    let currentGameIndex = 0;
+    
+    // Predefined list of known games with nice titles - you can expand this
+    const gameMetadata = {
+      "halo": { title: "Halo", subtitle: "The Master Chief Collection" },
+      "spiderman": { title: "Spider-Man", subtitle: "Miles Morales" },
+      "starfield": { title: "Starfield", subtitle: "Space Adventure" },
+      "sea_of_thieves": { title: "Sea of Thieves", subtitle: "Pirate Adventure" },
+      "rainworld": { title: "Rain World", subtitle: "Survival Platformer" },
+      "silksong": { title: "Hollow Knight", subtitle: "Silksong" },
+      // Add more games here as needed
+    };
+    
+    // Function to generate a nice title from filename if not in metadata
+    function generateGameTitle(filename) {
+      return filename
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    // Function to dynamically detect available games
+    async function detectGames() {
+      const detectedGames = [];
+      
+      // List of common image extensions
+      const imageExtensions = ['png', 'jpg', 'jpeg', 'webp'];
+      
+      // We'll try to detect games by attempting to load images
+      // This is a workaround since we can't directly read the filesystem from the browser
+      const potentialGames = [
+        'halo', 'spiderman', 'starfield', 'sea_of_thieves', 'rainworld', 'silksong',
+        // Add more potential game names here as you add them
+        'cyberpunk', 'witcher3', 'fallout4', 'skyrim', 'gta5', 'rdr2', 
+        'doom', 'minecraft', 'fortnite', 'apex', 'valorant', 'overwatch',
+        'destiny2', 'cod', 'battlefield', 'assassins_creed', 'far_cry',
+        'horizon', 'ghost_of_tsushima', 'god_of_war', 'last_of_us',
+        'uncharted', 'tomb_raider', 'mass_effect', 'elder_scrolls',
+        'fallout', 'bioshock', 'dishonored', 'prey', 'deathloop'
+      ];
+      
+      for (const gameName of potentialGames) {
+        try {
+          // Try to load the game image
+          const gameImg = new Image();
+          const bgImg = new Image();
+          
+          const gameImagePromise = new Promise((resolve) => {
+            gameImg.onload = () => resolve(true);
+            gameImg.onerror = () => resolve(false);
+            gameImg.src = `assets/games/${gameName}.png`;
+          });
+          
+          const bgImagePromise = new Promise((resolve) => {
+            bgImg.onload = () => resolve(true);
+            bgImg.onerror = () => resolve(false);
+            bgImg.src = `assets/bg/games/${gameName}.png`;
+          });
+          
+          const [gameExists, bgExists] = await Promise.all([gameImagePromise, bgImagePromise]);
+          
+          if (gameExists) {
+            const gameData = gameMetadata[gameName] || {
+              title: generateGameTitle(gameName),
+              subtitle: "Adventure Game"
+            };
+            
+            detectedGames.push({
+              id: gameName,
+              title: gameData.title,
+              subtitle: gameData.subtitle,
+              hasBackground: bgExists
+            });
+          }
+        } catch (error) {
+          console.log(`Skipping ${gameName}:`, error);
+        }
+      }
+      
+      return detectedGames;
+    }
+    
+    // Function to dynamically create CSS for backgrounds
+    function createDynamicCSS() {
+      // Remove existing dynamic styles if any
+      const existingStyle = document.getElementById('dynamic-game-styles');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+      
+      const style = document.createElement('style');
+      style.id = 'dynamic-game-styles';
+      
+      let css = '';
+      
+      // Add game backgrounds
+      games.forEach(game => {
+        if (game.hasBackground) {
+          css += `
+#game-container.bg-${game.id} {
+    background-image: url('assets/bg/games/${game.id}.png');
+}
+`;
+        }
+      });
+      
+      // Add app backgrounds
+      apps.forEach(app => {
+        if (app.hasBackground) {
+          css += `
+#game-container.bg-${app.id} {
+    background-image: url('assets/bg/apps/${app.id}.png');
+}
+`;
+        }
+      });
+      
+      // Add friend backgrounds
+      friends.forEach(friend => {
+        if (friend.hasBackground) {
+          css += `
+#game-container.bg-${friend.id} {
+    background-image: url('assets/bg/friends/${friend.id}.png');
+}
+`;
+        }
+      });
+      
+      // Add notify backgrounds
+      notifications.forEach(notification => {
+        if (notification.hasBackground) {
+          css += `
+#game-container.bg-${notification.id} {
+    background-image: url('assets/bg/notify/${notification.id}.png');
+}
+`;
+        }
+      });
+      
+      // Add gallery backgrounds
+      gallery.forEach(item => {
+        if (item.hasBackground) {
+          css += `
+#game-container.bg-${item.id} {
+    background-image: url('assets/bg/gallery/${item.id}.png');
+}
+`;
+        }
+      });
+      
+      // Add settings background
+      css += `
+#game-container.bg-settings {
+    background-image: url('assets/bg/settings/settings.png');
+}
+`;
+      
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+    
+    // Function to dynamically create game cards in HTML
+    function createGameCards() {
+      const carouselTrack = document.querySelector('.games-carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      games.forEach(game => {
+        const gameCard = document.createElement('div');
+        gameCard.className = 'game-card';
+        gameCard.dataset.game = game.id;
+        
+        const gameImage = document.createElement('img');
+        gameImage.src = `assets/games/${game.id}.png`;
+        gameImage.alt = game.title;
+        gameImage.className = 'game-image';
+        
+        gameCard.appendChild(gameImage);
+        carouselTrack.appendChild(gameCard);
+      });
+    }
+    
+    // Initialize the games system
+    async function initializeGames() {
+      console.log('🎮 Detecting available games...');
+      games = await detectGames();
+      console.log(`Found ${games.length} games:`, games.map(g => g.title));
+      
+      if (games.length === 0) {
+        console.warn('No games detected! Make sure images are in assets/games/ folder');
+        // Fallback to original hardcoded list
+        games = [
+          { id: "halo", title: "Halo", subtitle: "The Master Chief Collection", hasBackground: true }
+        ];
+      }
+      
+      createGameCards();
+      updateGamesCarousel();
+    }
+    
+    // Apps system - similar to games but for applications
+    let apps = [];
+    let currentAppIndex = 0;
+    
+    // Predefined list of known apps with nice titles
+    const appMetadata = {
+      "steam": { title: "Steam", subtitle: "Gaming Platform" },
+      "xbox": { title: "Xbox", subtitle: "Gaming Platform" },
+      "ea": { title: "EA App", subtitle: "Gaming Platform" },
+      "discord": { title: "Discord", subtitle: "Voice & Text Chat" },
+      "spotify": { title: "Spotify", subtitle: "Music Streaming" },
+      "netflix": { title: "Netflix", subtitle: "Video Streaming" },
+      "chrome": { title: "Chrome", subtitle: "Web Browser" },
+      "vscode": { title: "VS Code", subtitle: "Code Editor" },
+      "photoshop": { title: "Photoshop", subtitle: "Image Editor" },
+      // Add more apps here as needed
+    };
+    
+    // Function to generate a nice title from filename if not in metadata
+    function generateAppTitle(filename) {
+      return filename
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    // Function to dynamically detect available apps
+    async function detectApps() {
+      const detectedApps = [];
+      
+      // We'll try to detect apps by attempting to load images
+      const potentialApps = [
+        'xbox', 'discord', 'spotify', 'steam', 'ea', 'netflix',
+        'chrome', 'firefox', 'edge', 'vscode', 'visual_studio', 
+        'photoshop', 'illustrator', 'premiere', 'after_effects', 
+        'blender', 'unity', 'unreal', 'gimp', 'obs', 'streamlabs', 
+        'twitch', 'youtube', 'zoom', 'teams', 'slack', 'notion', 
+        'excel', 'word'
+      ];
+      
+      for (const appName of potentialApps) {
+        try {
+          const appImg = new Image();
+          const bgImg = new Image();
+          
+          const appImagePromise = new Promise((resolve) => {
+            appImg.onload = () => resolve(true);
+            appImg.onerror = () => resolve(false);
+            appImg.src = `assets/apps/${appName}.png`;
+          });
+          
+          const bgImagePromise = new Promise((resolve) => {
+            bgImg.onload = () => resolve(true);
+            bgImg.onerror = () => resolve(false);
+            bgImg.src = `assets/bg/apps/${appName}.png`;
+          });
+          
+          const [appExists, bgExists] = await Promise.all([appImagePromise, bgImagePromise]);
+          
+          if (appExists) {
+            const appData = appMetadata[appName] || {
+              title: generateAppTitle(appName),
+              subtitle: "Application"
+            };
+            
+            detectedApps.push({
+              id: appName,
+              title: appData.title,
+              subtitle: appData.subtitle,
+              hasBackground: bgExists
+            });
+          }
+        } catch (error) {
+          console.log(`Could not load app: ${appName}`);
+        }
+      }
+      
+      return detectedApps;
+    }
+    
+    function createAppCards() {
+      const carouselTrack = document.querySelector('.apps-carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      apps.forEach((app, index) => {
+        const appCard = document.createElement('div');
+        appCard.className = 'game-card';
+        appCard.dataset.app = app.id;
+        
+        const appImage = document.createElement('img');
+        appImage.src = `assets/apps/${app.id}.png`;
+        appImage.alt = app.title;
+        appImage.className = 'game-image';
+        
+        appCard.appendChild(appImage);
+        carouselTrack.appendChild(appCard);
+      });
+    }
+    
+    async function initializeApps() {
+      console.log('📱 Detecting available apps...');
+      apps = await detectApps();
+      console.log(`Found ${apps.length} apps:`, apps.map(a => a.title));
+      
+      if (apps.length === 0) {
+        console.warn('No apps detected! Make sure images are in assets/apps/ folder');
+        // Fallback to original hardcoded list
+        apps = [
+          { id: "steam", title: "Steam", subtitle: "Gaming Platform", hasBackground: false }
+        ];
+      }
+      
+      createAppCards();
+      updateAppsCarousel();
+    }
+    
+    // Friends system - similar to games and apps
+    let friends = [];
+    let currentFriendIndex = 0;
+    
+    // Predefined list of known friends with nice titles
+    const friendMetadata = {
+      "friend1": { title: "Alex", subtitle: "Online" },
+      "friend2": { title: "Sarah", subtitle: "Playing Halo" },
+      "friend3": { title: "Mike", subtitle: "Away" },
+      "friend4": { title: "Jessica", subtitle: "Online" },
+      "friend5": { title: "David", subtitle: "Offline" },
+      "friend6": { title: "Emma", subtitle: "Playing Minecraft" },
+      // Add more friends here as needed
+    };
+    
+    // Function to generate a nice title from filename if not in metadata
+    function generateFriendTitle(filename) {
+      return filename
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    // Function to dynamically detect available friends
+    async function detectFriends() {
+      const detectedFriends = [];
+      
+      const potentialFriends = [
+        'friend1', 'friend2', 'friend6', 'friend7', 'friend8', 'friend5', 'friend4', 'friend3',
+        // Add more potential friend names here as you add them
+        'friend9', 'friend10'
+      ];
+      
+      for (const friendName of potentialFriends) {
+        try {
+          const friendImg = new Image();
+          const bgImg = new Image();
+          
+          const friendImagePromise = new Promise((resolve) => {
+            friendImg.onload = () => resolve(true);
+            friendImg.onerror = () => resolve(false);
+            friendImg.src = `assets/friends/${friendName}.png`;
+          });
+          
+          const bgImagePromise = new Promise((resolve) => {
+            bgImg.onload = () => resolve(true);
+            bgImg.onerror = () => resolve(false);
+            bgImg.src = `assets/bg/friends/${friendName}.png`;
+          });
+          
+          const [friendExists, bgExists] = await Promise.all([friendImagePromise, bgImagePromise]);
+          
+          if (friendExists) {
+            const friendData = friendMetadata[friendName] || {
+              title: generateFriendTitle(friendName),
+              subtitle: "Online"
+            };
+            
+            detectedFriends.push({
+              id: friendName,
+              title: friendData.title,
+              subtitle: friendData.subtitle,
+              hasBackground: bgExists
+            });
+          }
+        } catch (error) {
+          console.log(`Could not load friend: ${friendName}`);
+        }
+      }
+      
+      return detectedFriends;
+    }
+    
+    function createFriendCards() {
+      const carouselTrack = document.querySelector('.friends-carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      friends.forEach((friend, index) => {
+        const friendCard = document.createElement('div');
+        friendCard.className = 'friend-card';
+        friendCard.dataset.friend = friend.id;
+        
+        const friendImage = document.createElement('img');
+        friendImage.src = `assets/friends/${friend.id}.png`;
+        friendImage.alt = friend.title;
+        friendImage.className = 'friend-image';
+        
+        friendCard.appendChild(friendImage);
+        carouselTrack.appendChild(friendCard);
+      });
+    }
+    
+    async function initializeFriends() {
+      console.log('👥 Detecting available friends...');
+      friends = await detectFriends();
+      console.log(`Found ${friends.length} friends:`, friends.map(f => f.title));
+      
+      if (friends.length === 0) {
+        console.warn('No friends detected! Make sure images are in assets/friends/ folder');
+        // Fallback to original hardcoded list
+        friends = [
+          { id: "friend1", title: "Friend", subtitle: "Online", hasBackground: false }
+        ];
+      }
+      
+      createFriendCards();
+      updateFriendsCarousel();
+    }
+
+    // Notify system - similar to friends
+    let notifications = [];
+    let currentNotifyIndex = 0;
+    
+    // Predefined list of known notifications with nice titles
+    const notifyMetadata = {
+      "notify1": { title: "Game Invite", subtitle: "Sarah invites you to Halo" },
+      "notify2": { title: "Achievement", subtitle: "New achievement unlocked!" },
+      "notify3": { title: "Friend Online", subtitle: "Mike is now online" },
+      "notify4": { title: "Message", subtitle: "New message from Alex" },
+      "notify5": { title: "Update", subtitle: "Game update available" },
+      // Add more notifications here as needed
+    };
+    
+    // Function to generate a nice title from filename if not in metadata
+    function generateNotifyTitle(filename) {
+      return filename
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    // Function to dynamically detect available notifications
+    async function detectNotifications() {
+      const detectedNotifications = [];
+      
+      const potentialNotifications = [
+        'notify1', 'notify2', 'notify3', 'notify4', 'notify5',
+        // Add more potential notification names here as you add them
+        'notify6', 'notify7', 'notify8', 'notify9', 'notify10'
+      ];
+      
+      for (const notifyName of potentialNotifications) {
+        try {
+          const notifyImg = new Image();
+          const bgImg = new Image();
+          
+          const notifyImagePromise = new Promise((resolve) => {
+            notifyImg.onload = () => resolve(true);
+            notifyImg.onerror = () => resolve(false);
+            notifyImg.src = `assets/notify/${notifyName}.png`;
+          });
+          
+          const bgImagePromise = new Promise((resolve) => {
+            bgImg.onload = () => resolve(true);
+            bgImg.onerror = () => resolve(false);
+            bgImg.src = `assets/bg/notify/${notifyName}.png`;
+          });
+          
+          const [notifyExists, bgExists] = await Promise.all([notifyImagePromise, bgImagePromise]);
+          
+          if (notifyExists) {
+            const notifyData = notifyMetadata[notifyName] || {
+              title: generateNotifyTitle(notifyName),
+              subtitle: "Notification"
+            };
+            
+            detectedNotifications.push({
+              id: notifyName,
+              title: notifyData.title,
+              subtitle: notifyData.subtitle,
+              hasBackground: bgExists
+            });
+          }
+        } catch (error) {
+          console.log(`Could not load notification: ${notifyName}`);
+        }
+      }
+      
+      return detectedNotifications;
+    }
+    
+    function createNotifyCards() {
+      const carouselTrack = document.querySelector('.notify-carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      notifications.forEach((notification, index) => {
+        const notifyCard = document.createElement('div');
+        notifyCard.className = 'notify-card';
+        notifyCard.dataset.notify = notification.id;
+        
+        const notifyImage = document.createElement('img');
+        notifyImage.src = `assets/notify/${notification.id}.png`;
+        notifyImage.alt = notification.title;
+        notifyImage.className = 'notify-image';
+        
+        notifyCard.appendChild(notifyImage);
+        carouselTrack.appendChild(notifyCard);
+      });
+    }
+    
+    async function initializeNotifications() {
+      console.log('🔔 Detecting available notifications...');
+      notifications = await detectNotifications();
+      console.log(`Found ${notifications.length} notifications:`, notifications.map(n => n.title));
+      
+      if (notifications.length === 0) {
+        console.warn('No notifications detected! Make sure images are in assets/notify/ folder');
+        // Fallback to original hardcoded list
+        notifications = [
+          { id: "notify1", title: "Notification", subtitle: "No new notifications", hasBackground: false }
+        ];
+      }
+      
+      createNotifyCards();
+      updateNotifyCarousel();
+    }
+
+    // Gallery system - similar to games, apps, and friends
+    let gallery = [];
+    let currentGalleryIndex = 0;
+    
+    // Predefined list of known gallery items with nice titles
+    const galleryMetadata = {
+      "gallery1": { title: "Sunset", subtitle: "Beach Photo" },
+      "gallery2": { title: "Mountains", subtitle: "Landscape" },
+      "gallery3": { title: "City", subtitle: "Night View" },
+      "gallery4": { title: "Nature", subtitle: "Forest Path" },
+      "gallery5": { title: "Ocean", subtitle: "Seascape" },
+      "gallery6": { title: "Architecture", subtitle: "Modern Design" },
+      // Add more gallery items here as needed
+    };
+    
+    // Function to generate a nice title from filename if not in metadata
+    function generateGalleryTitle(filename) {
+      return filename
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    
+    // Function to dynamically detect available gallery items
+    async function detectGallery() {
+      const detectedGallery = [];
+      
+      const potentialGallery = [
+        'gallery3', 'gallery4', 'gallery5', 'gallery2', 'gallery6', 'gallery1', 'gallery7', 'gallery8',
+        'gallery9', 'gallery10', 'gallery11', 'gallery12'
+        // Add more potential gallery names here as you add them
+      ];
+      
+      for (const galleryName of potentialGallery) {
+        try {
+          const galleryImg = new Image();
+          const bgImg = new Image();
+          
+          const galleryImagePromise = new Promise((resolve) => {
+            galleryImg.onload = () => resolve(true);
+            galleryImg.onerror = () => resolve(false);
+            galleryImg.src = `assets/gallery/${galleryName}.png`;
+          });
+          
+          const bgImagePromise = new Promise((resolve) => {
+            bgImg.onload = () => resolve(true);
+            bgImg.onerror = () => resolve(false);
+            bgImg.src = `assets/bg/gallery/${galleryName}.png`;
+          });
+          
+          const [galleryExists, bgExists] = await Promise.all([galleryImagePromise, bgImagePromise]);
+          
+          if (galleryExists) {
+            const galleryData = galleryMetadata[galleryName] || {
+              title: generateGalleryTitle(galleryName),
+              subtitle: "Photo"
+            };
+            
+            detectedGallery.push({
+              id: galleryName,
+              title: galleryData.title,
+              subtitle: galleryData.subtitle,
+              hasBackground: bgExists
+            });
+          }
+        } catch (error) {
+          console.log(`Could not load gallery item: ${galleryName}`);
+        }
+      }
+      
+      return detectedGallery;
+    }
+    
+    function createGalleryCards() {
+      const carouselTrack = document.querySelector('.gallery-carousel-track');
+      console.log('Gallery carousel track:', carouselTrack);
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      gallery.forEach((item, index) => {
+        console.log(`Creating gallery card for ${item.id}:`, item);
+        const galleryCard = document.createElement('div');
+        galleryCard.className = 'gallery-card';
+        galleryCard.dataset.gallery = item.id;
+        
+        const galleryImage = document.createElement('img');
+        galleryImage.src = `assets/gallery/${item.id}.png`;
+        galleryImage.alt = item.title;
+        galleryImage.className = 'gallery-image';
+        
+        galleryCard.appendChild(galleryImage);
+        carouselTrack.appendChild(galleryCard);
+        console.log('Added gallery card to track');
+      });
+      console.log(`Created ${gallery.length} gallery cards total`);
+    }
+    
+    async function initializeGallery() {
+      console.log('🖼️ Detecting available gallery items...');
+      gallery = await detectGallery();
+      console.log(`Found ${gallery.length} gallery items:`, gallery.map(g => g.title));
+      console.log('Gallery data:', gallery);
+      
+      if (gallery.length === 0) {
+        console.warn('No gallery items detected! Make sure images are in assets/gallery/ folder');
+        // Fallback to original hardcoded list
+        gallery = [
+          { id: "gallery1", title: "Gallery", subtitle: "Photo", hasBackground: false }
+        ];
+      }
+      
+      createGalleryCards();
+      console.log('Gallery cards created');
+      updateGalleryCarousel();
+      console.log('Gallery carousel updated');
+    }
+
+    function updateGalleryCarousel() {
+      const galleryCards = document.querySelectorAll('.gallery-carousel-track .gallery-card');
+      const totalGallery = galleryCards.length;
+      const gameContainer = document.getElementById('game-container');
+      
+      if (totalGallery === 0) return; // No gallery items to display
+      
+      // Update background based on current gallery item
+      const currentGalleryItem = gallery[currentGalleryIndex];
+      if (currentGalleryItem && gameContainer) {
+        // Remove all background classes
+        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+        
+        // Add the current gallery item's background class if it has a background
+        if (currentGalleryItem.hasBackground) {
+          gameContainer.classList.add(`bg-${currentGalleryItem.id}`);
+        }
+      }
+      
+      // First pass: immediately position all cards that should be hidden offscreen
+      galleryCards.forEach((card, index) => {
+        const relativeIndex = (index - currentGalleryIndex + totalGallery) % totalGallery;
+        
+        // If this card should be hidden, position it offscreen immediately
+        if (relativeIndex > 1 && relativeIndex < totalGallery - 1) {
+          card.style.transition = 'none'; // Disable transitions for immediate positioning
+          card.style.opacity = '0';
+          card.style.visibility = 'hidden';
+          card.style.zIndex = '0';
+          
+          // Position cards offscreen based on which side they're coming from
+          if (relativeIndex < totalGallery / 2) {
+            // Cards that are "ahead" go to the right
+            card.style.transform = 'translateX(2000px) scale(0.5)';
+            card.classList.remove('hidden-left');
+            card.classList.add('hidden-right');
+          } else {
+            // Cards that are "behind" go to the left
+            card.style.transform = 'translateX(-2000px) scale(0.5)';
+            card.classList.remove('hidden-right');
+            card.classList.add('hidden-left');
+          }
+        }
+      });
+      
+      // Small delay to ensure hidden cards are processed, then position visible cards
+      requestAnimationFrame(() => {
+        galleryCards.forEach((card, index) => {
+          // Remove all position classes
+          card.classList.remove('center', 'left', 'right', 'hidden', 'hidden-left', 'hidden-right');
+          
+          // Calculate relative position
+          const relativeIndex = (index - currentGalleryIndex + totalGallery) % totalGallery;
+          
+          // Get the gallery image element
+          const galleryImage = card.querySelector('.gallery-image');
+          const galleryId = card.dataset.gallery;
+          
+          if (relativeIndex === 0) {
+            // Center position - use focus image only when carousel has focus
+            card.classList.add('center');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '3';
+            card.style.transform = '';
+            card.style.opacity = '';
+            card.style.visibility = '';
+            if (galleryImage && galleryId) {
+              // Only show focus image when carousel is focused, not when nav is focused
+              if (navigationFocus === "carousel") {
+                galleryImage.src = `assets/gallery/${galleryId}_focus.png`;
+              } else {
+                galleryImage.src = `assets/gallery/${galleryId}.png`;
+              }
+            }
+          } else if (relativeIndex === 1) {
+            // Right position
+            card.classList.add('right');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '';
+            card.style.visibility = '';
+            if (galleryImage && galleryId) {
+              galleryImage.src = `assets/gallery/${galleryId}.png`;
+            }
+          } else if (relativeIndex === totalGallery - 1) {
+            // Left position
+            card.classList.add('left');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '';
+            card.style.visibility = '';
+            if (galleryImage && galleryId) {
+              galleryImage.src = `assets/gallery/${galleryId}.png`;
+            }
+          } else {
+            // Hidden cards - position them offscreen
+            card.classList.add('hidden');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // Enable transitions for smooth movement
+            card.style.zIndex = '0';
+            card.style.opacity = '0';
+            card.style.visibility = 'hidden';
+            
+            // Position offscreen based on direction
+            if (relativeIndex < totalGallery / 2) {
+              // Cards that are "ahead" stay on the right
+              card.style.transform = 'translateX(2000px) scale(0.5)';
+              card.classList.add('hidden-right');
+            } else {
+              // Cards that are "behind" stay on the left
+              card.style.transform = 'translateX(-2000px) scale(0.5)';
+              card.classList.add('hidden-left');
+            }
+            
+            if (galleryImage && galleryId) {
+              galleryImage.src = `assets/gallery/${galleryId}.png`;
+            }
+          }
+        });
+      });
+    }
+
+    function navigateGalleryCarousel(direction) {
+      const totalGallery = gallery.length;
+      if (direction === 'right') {
+        currentGalleryIndex = (currentGalleryIndex + 1) % totalGallery;
+      } else if (direction === 'left') {
+        currentGalleryIndex = (currentGalleryIndex - 1 + totalGallery) % totalGallery;
+      }
+      updateGalleryCarousel();
+      updateBottomControls(); // Update button when navigating through gallery
+    }
+    
+    function updateAppsCarousel() {
+      const appCards = document.querySelectorAll('.apps-carousel-track .game-card');
+      const totalApps = appCards.length;
+      const gameContainer = document.getElementById('game-container');
+      
+      if (totalApps === 0) return; // No apps to display
+      
+      // Update background based on current app
+      const currentApp = apps[currentAppIndex];
+      if (currentApp && gameContainer) {
+        // Remove all background classes
+        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+        
+        // Add the current app's background class if it has a background
+        if (currentApp.hasBackground) {
+          gameContainer.classList.add(`bg-${currentApp.id}`);
+        }
+      }
+      
+      appCards.forEach((card, index) => {
+        // Remove all position classes
+        card.classList.remove('center', 'left', 'right', 'hidden', 'hidden-left', 'hidden-right');
+        
+        // Calculate relative position
+        const relativeIndex = (index - currentAppIndex + totalApps) % totalApps;
+        
+        // Get the app image element
+        const appImage = card.querySelector('.game-image');
+        const appId = card.dataset.app;
+        
+        if (relativeIndex === 0) {
+          // Center position - use focus image only when carousel has focus
+          card.classList.add('center');
+          card.style.zIndex = '3';
+          card.style.transform = '';
+          card.style.opacity = '1';
+          card.style.visibility = 'visible';
+          card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          if (appImage && appId) {
+            if (navigationFocus === "carousel") {
+              appImage.src = `assets/apps/${appId}_focus.png`;
+            } else {
+              appImage.src = `assets/apps/${appId}.png`;
+            }
+          }
+        } else if (relativeIndex === totalApps - 1) {
+          // Left position (previous item) - use regular image
+          card.classList.add('left');
+          card.style.zIndex = '1';
+          card.style.transform = '';
+          card.style.opacity = '1';
+          card.style.visibility = 'visible';
+          card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          if (appImage && appId) {
+            appImage.src = `assets/apps/${appId}.png`;
+          }
+        } else if (relativeIndex === 1) {
+          // Right position (next item) - use regular image
+          card.classList.add('right');
+          card.style.zIndex = '1';
+          card.style.transform = '';
+          card.style.opacity = '1';
+          card.style.visibility = 'visible';
+          card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          if (appImage && appId) {
+            appImage.src = `assets/apps/${appId}.png`;
+          }
+        } else {
+          // Hidden positions - use regular image
+          card.classList.add('hidden');
+          card.style.zIndex = '0';
+          card.style.opacity = '0';
+          card.style.visibility = 'hidden';
+          card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          if (relativeIndex < totalApps / 2) {
+            card.style.transform = 'translateX(2000px) scale(0.5)';
+            card.classList.add('hidden-right');
+          } else {
+            card.style.transform = 'translateX(-2000px) scale(0.5)';
+            card.classList.add('hidden-left');
+          }
+          if (appImage && appId) {
+            appImage.src = `assets/apps/${appId}.png`;
+          }
+        }
+      });
+    }
+    
+    function navigateAppsCarousel(direction) {
+      const totalApps = apps.length;
+      if (direction === 'right') {
+        currentAppIndex = (currentAppIndex + 1) % totalApps;
+      } else if (direction === 'left') {
+        currentAppIndex = (currentAppIndex - 1 + totalApps) % totalApps;
+      }
+      updateAppsCarousel();
+      updateBottomControls(); // Update button when navigating through apps
+    }
+    
+    function updateFriendsCarousel() {
+      const friendCards = document.querySelectorAll('.friends-carousel-track .friend-card');
+      const totalFriends = friendCards.length;
+      const gameContainer = document.getElementById('game-container');
+      
+      if (totalFriends === 0) return; // No friends to display
+      
+      // Update background based on current friend
+      const currentFriend = friends[currentFriendIndex];
+      if (currentFriend && gameContainer) {
+        // Remove all background classes
+        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+        
+        // Add the current friend's background class if it has a background
+        if (currentFriend.hasBackground) {
+          gameContainer.classList.add(`bg-${currentFriend.id}`);
+        }
+      }
+      
+      friendCards.forEach((card, index) => {
+        // Remove all position classes
+        card.classList.remove('center', 'left', 'right', 'far-left', 'far-right', 'hidden', 'hidden-left', 'hidden-right');
+        
+        // Calculate relative position
+        const relativeIndex = (index - currentFriendIndex + totalFriends) % totalFriends;
+        
+        // Get the friend image element
+        const friendImage = card.querySelector('.friend-image');
+        const friendId = card.dataset.friend;
+        
+        if (relativeIndex === 0) {
+          // Center position
+          card.classList.add('center');
+          if (friendImage && friendId) {
+            if (navigationFocus === "carousel") {
+              friendImage.src = `assets/friends/${friendId}_focus.png`;
+            } else {
+              friendImage.src = `assets/friends/${friendId}.png`;
+            }
+          }
+        } else if (relativeIndex === totalFriends - 1) {
+          // Left position
+          card.classList.add('left');
+          if (friendImage && friendId) {
+            friendImage.src = `assets/friends/${friendId}.png`;
+          }
+        } else if (relativeIndex === 1) {
+          // Right position
+          card.classList.add('right');
+          if (friendImage && friendId) {
+            friendImage.src = `assets/friends/${friendId}.png`;
+          }
+        } else if (relativeIndex === totalFriends - 2) {
+          // Far left peek position
+          card.classList.add('far-left');
+          if (friendImage && friendId) {
+            friendImage.src = `assets/friends/${friendId}.png`;
+          }
+        } else if (relativeIndex === 2) {
+          // Far right peek position
+          card.classList.add('far-right');
+          if (friendImage && friendId) {
+            friendImage.src = `assets/friends/${friendId}.png`;
+          }
+        } else {
+          // Hidden positions
+          card.classList.add('hidden');
+          if (relativeIndex < totalFriends / 2) {
+            card.classList.add('hidden-right');
+          } else {
+            card.classList.add('hidden-left');
+          }
+          if (friendImage && friendId) {
+            friendImage.src = `assets/friends/${friendId}.png`;
+          }
+        }
+      });
+    }
+    
+    function navigateFriendsCarousel(direction) {
+      const totalFriends = friends.length;
+      if (direction === 'right') {
+        currentFriendIndex = (currentFriendIndex + 1) % totalFriends;
+      } else if (direction === 'left') {
+        currentFriendIndex = (currentFriendIndex - 1 + totalFriends) % totalFriends;
+      }
+      updateFriendsCarousel();
+      updateBottomControls(); // Update button when navigating through friends
+    }
+    
+    function updateNotifyCarousel() {
+      const notifyCards = document.querySelectorAll('.notify-carousel-track .notify-card');
+      const totalNotifications = notifyCards.length;
+      const gameContainer = document.getElementById('game-container');
+      
+      if (totalNotifications === 0) return; // No notifications to display
+      
+      // Update background based on current notification
+      const currentNotification = notifications[currentNotifyIndex];
+      if (currentNotification && gameContainer) {
+        // Remove all background classes
+        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+        
+        // Add the current notification's background class if it has a background
+        if (currentNotification.hasBackground) {
+          gameContainer.classList.add(`bg-${currentNotification.id}`);
+        }
+      }
+      
+      notifyCards.forEach((card, index) => {
+        // Remove all position classes
+        card.classList.remove('center', 'left', 'right', 'far-left', 'far-right', 'hidden', 'hidden-left', 'hidden-right');
+        
+        // Calculate relative position
+        const relativeIndex = (index - currentNotifyIndex + totalNotifications) % totalNotifications;
+        
+        // Get the notify image element
+        const notifyImage = card.querySelector('.notify-image');
+        const notifyId = card.dataset.notify;
+        
+        if (relativeIndex === 0) {
+          // Center position
+          card.classList.add('center');
+          if (notifyImage && notifyId) {
+            if (navigationFocus === "carousel") {
+              notifyImage.src = `assets/notify/${notifyId}_focus.png`;
+            } else {
+              notifyImage.src = `assets/notify/${notifyId}.png`;
+            }
+          }
+        } else if (relativeIndex === totalNotifications - 1) {
+          // Left position
+          card.classList.add('left');
+          if (notifyImage && notifyId) {
+            notifyImage.src = `assets/notify/${notifyId}.png`;
+          }
+        } else if (relativeIndex === 1) {
+          // Right position
+          card.classList.add('right');
+          if (notifyImage && notifyId) {
+            notifyImage.src = `assets/notify/${notifyId}.png`;
+          }
+        } else if (relativeIndex === totalNotifications - 2) {
+          // Far left peek position
+          card.classList.add('far-left');
+          if (notifyImage && notifyId) {
+            notifyImage.src = `assets/notify/${notifyId}.png`;
+          }
+        } else if (relativeIndex === 2) {
+          // Far right peek position
+          card.classList.add('far-right');
+          if (notifyImage && notifyId) {
+            notifyImage.src = `assets/notify/${notifyId}.png`;
+          }
+        } else {
+          // Hidden positions
+          card.classList.add('hidden');
+          if (relativeIndex < totalNotifications / 2) {
+            card.classList.add('hidden-right');
+          } else {
+            card.classList.add('hidden-left');
+          }
+          if (notifyImage && notifyId) {
+            notifyImage.src = `assets/notify/${notifyId}.png`;
+          }
+        }
+      });
+    }
+    
+    function navigateNotifyCarousel(direction) {
+      const totalNotifications = notifications.length;
+      if (direction === 'right') {
+        currentNotifyIndex = (currentNotifyIndex + 1) % totalNotifications;
+      } else if (direction === 'left') {
+        currentNotifyIndex = (currentNotifyIndex - 1 + totalNotifications) % totalNotifications;
+      }
+      updateNotifyCarousel();
+      updateBottomControls(); // Update button when navigating through notifications
+    }
+    
+    function updateGamesCarousel() {
+      const gameCards = document.querySelectorAll('.games-carousel-track .game-card');
+      const totalGames = gameCards.length;
+      const gameContainer = document.getElementById('game-container');
+      
+      if (totalGames === 0) return; // No games to display
+      
+      // Update background based on current game
+      const currentGame = games[currentGameIndex];
+      if (currentGame && gameContainer) {
+        // Remove all background classes
+        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+        
+        // Add the current game's background class if it has a background
+        if (currentGame.hasBackground) {
+          gameContainer.classList.add(`bg-${currentGame.id}`);
+        }
+      }
+      
+      // First pass: immediately position all cards that should be hidden offscreen
+      gameCards.forEach((card, index) => {
+        const relativeIndex = (index - currentGameIndex + totalGames) % totalGames;
+        
+        // If this card should be hidden, position it offscreen immediately
+        if (relativeIndex > 1 && relativeIndex < totalGames - 1) {
+          card.style.transition = 'none'; // Disable transitions for immediate positioning
+          card.style.opacity = '0';
+          card.style.visibility = 'hidden';
+          card.style.zIndex = '0';
+          
+          // Position cards offscreen based on which side they're coming from
+          if (relativeIndex < totalGames / 2) {
+            // Cards that are "ahead" go to the right
+            card.style.transform = 'translateX(2000px) scale(0.5)';
+            card.classList.remove('hidden-left');
+            card.classList.add('hidden-right');
+          } else {
+            // Cards that are "behind" go to the left
+            card.style.transform = 'translateX(-2000px) scale(0.5)';
+            card.classList.remove('hidden-right');
+            card.classList.add('hidden-left');
+          }
+        }
+      });
+      
+      // Small delay to ensure hidden cards are processed, then position visible cards
+      requestAnimationFrame(() => {
+        gameCards.forEach((card, index) => {
+          // Remove all position classes
+          card.classList.remove('center', 'left', 'right', 'hidden', 'hidden-left', 'hidden-right');
+          
+          // Calculate relative position
+          const relativeIndex = (index - currentGameIndex + totalGames) % totalGames;
+          
+          // Get the game image element
+          const gameImage = card.querySelector('.game-image');
+          const gameId = card.dataset.game;
+          
+          if (relativeIndex === 0) {
+            // Center position - use focus image only when carousel has focus
+            card.classList.add('center');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '3';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (gameImage && gameId) {
+              if (navigationFocus === "carousel") {
+                gameImage.src = `assets/games/${gameId}_focus.png`;
+              } else {
+                gameImage.src = `assets/games/${gameId}.png`;
+              }
+            }
+          } else if (relativeIndex === totalGames - 1) {
+            // Left position (previous item) - use regular image
+            card.classList.add('left');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (gameImage && gameId) {
+              gameImage.src = `assets/games/${gameId}.png`;
+            }
+          } else if (relativeIndex === 1) {
+            // Right position (next item) - use regular image
+            card.classList.add('right');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            card.style.zIndex = '1';
+            card.style.transform = '';
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            if (gameImage && gameId) {
+              gameImage.src = `assets/games/${gameId}.png`;
+            }
+          } else {
+            // Hidden positions - keep them hidden offscreen
+            card.classList.add('hidden');
+            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'; // Enable transitions for smooth movement
+            card.style.zIndex = '0';
+            card.style.opacity = '0';
+            card.style.visibility = 'hidden';
+            
+            // Position offscreen based on direction
+            if (relativeIndex < totalGames / 2) {
+              // Cards that are "ahead" stay on the right
+              card.style.transform = 'translateX(2000px) scale(0.5)';
+              card.classList.add('hidden-right');
+            } else {
+              // Cards that are "behind" stay on the left
+              card.style.transform = 'translateX(-2000px) scale(0.5)';
+              card.classList.add('hidden-left');
+            }
+            
+            if (gameImage && gameId) {
+              gameImage.src = `assets/games/${gameId}.png`;
+            }
+          }
+        });
+      });
+    }
+
+    function navigateGamesCarousel(direction) {
+      const totalGames = games.length;
+      if (direction === 'right') {
+        currentGameIndex = (currentGameIndex + 1) % totalGames;
+      } else if (direction === 'left') {
+        currentGameIndex = (currentGameIndex - 1 + totalGames) % totalGames;
+      }
+      updateGamesCarousel();
+    }
+
+    // Navigation tabs logic
+    const tabs = [
+      "games", "apps", "friends", "gallery", "notifications", "settings", "copilot"
+    ];
+
+    let selectedIndex = 0;
+    let navigationFocus = "nav"; // "nav" for navigation bar, "carousel" for games/apps carousel
+    const nav = document.getElementById("top-nav");
+    const content = document.getElementById("content");
+    const gamesCarousel = document.getElementById("games-carousel");
+    const appsCarousel = document.getElementById("apps-carousel");
+    const notifyCarousel = document.getElementById("notify-carousel");
+    const galleryCarousel = document.getElementById("gallery-carousel");
+    const defaultContent = document.getElementById("default-content");
+
+    function renderNav() {
+      nav.innerHTML = "";
+      tabs.forEach((tab, i) => {
+        const btn = document.createElement("button");
+        btn.className = "nav-item" + (i === selectedIndex ? " is-active" : "");
+        btn.dataset.index = i;
+
+        // Choose correct image based on tab and focus state
+        let state;
+        if (i === selectedIndex) {
+          if ((tab === "games" || tab === "apps" || tab === "friends" || tab === "gallery" || tab === "notifications" || tab === "settings" || tab === "copilot") && navigationFocus === "carousel") {
+            state = "active";
+          } else {
+            state = "select";
+          }
+        } else {
+          state = "default";
+        }
+        const img = document.createElement("img");
+        img.src = `assets/nav/${tab}_${state}.png`;
+        img.alt = tab;
+        btn.appendChild(img);
+
+        btn.addEventListener("mouseenter", () => {
+          img.src = `assets/nav/${tab}_active.png`;
+        });
+        btn.addEventListener("mouseleave", () => {
+          if (i === selectedIndex) {
+            if ((tab === "games" || tab === "apps" || tab === "friends" || tab === "gallery" || tab === "notifications" || tab === "settings" || tab === "copilot") && navigationFocus === "carousel") {
+              img.src = `assets/nav/${tab}_active.png`;
+            } else {
+              img.src = `assets/nav/${tab}_select.png`;
+            }
+          } else {
+            img.src = `assets/nav/${tab}_default.png`;
+          }
+        });
+        btn.addEventListener("click", () => selectTab(i));
+
+        nav.appendChild(btn);
+      });
+
+      // Update content based on selected tab
+      updateContent();
+      updateFocusVisuals();
+    }
+
+    function updateContent() {
+      const currentTab = tabs[selectedIndex];
+      
+      // Fade out all carousels and default content first
+      const fadeOutDuration = 200; // milliseconds
+      
+      gamesCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      appsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      const friendsCarousel = document.getElementById('friends-carousel');
+      friendsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      notifyCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      galleryCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      const settingsCarousel = document.getElementById('settings-carousel');
+      settingsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      const copilotCarousel = document.getElementById('copilot-carousel');
+      copilotCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      defaultContent.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+      
+      gamesCarousel.style.opacity = "0";
+      appsCarousel.style.opacity = "0";
+      friendsCarousel.style.opacity = "0";
+      notifyCarousel.style.opacity = "0";
+      galleryCarousel.style.opacity = "0";
+      settingsCarousel.style.opacity = "0";
+      copilotCarousel.style.opacity = "0";
+      defaultContent.style.opacity = "0";
+      
+      // After fade out completes, switch content and fade in
+      setTimeout(() => {
+        // Hide all elements
+        gamesCarousel.style.display = "none";
+        appsCarousel.style.display = "none";
+        friendsCarousel.style.display = "none";
+        notifyCarousel.style.display = "none";
+        galleryCarousel.style.display = "none";
+        settingsCarousel.style.display = "none";
+        copilotCarousel.style.display = "none";
+        defaultContent.style.display = "none";
+        
+        if (currentTab === "games") {
+          gamesCarousel.style.display = "flex";
+          updateGamesCarousel();
+          // Fade in games carousel
+          setTimeout(() => {
+            gamesCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            gamesCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        } else if (currentTab === "apps") {
+          appsCarousel.style.display = "flex";
+          updateAppsCarousel();
+          // Fade in apps carousel
+          setTimeout(() => {
+            appsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            appsCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        } else if (currentTab === "friends") {
+          friendsCarousel.style.display = "flex";
+          updateFriendsCarousel();
+          // Fade in friends carousel
+          setTimeout(() => {
+            friendsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            friendsCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        } else if (currentTab === "gallery") {
+          galleryCarousel.style.display = "flex";
+          updateGalleryCarousel();
+          // Fade in gallery carousel
+          setTimeout(() => {
+            galleryCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            galleryCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        } else if (currentTab === "notifications") {
+          notifyCarousel.style.display = "flex";
+          updateNotifyCarousel();
+          // Fade in notify carousel
+          setTimeout(() => {
+            notifyCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            notifyCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        } else if (currentTab === "settings") {
+          settingsCarousel.style.display = "flex";
+          
+          // Set settings background
+          const gameContainer = document.getElementById('game-container');
+          if (gameContainer) {
+            // Remove all background classes
+            const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+            existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+            
+            // Add settings background
+            gameContainer.classList.add('bg-settings');
+          }
+          
+          updateSettingsCarousel();
+          // Fade in settings carousel
+          setTimeout(() => {
+            settingsCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            settingsCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        } else if (currentTab === "copilot") {
+          copilotCarousel.style.display = "flex";
+          
+          // Set copilot background
+          const gameContainer = document.getElementById('game-container');
+          if (gameContainer) {
+            // Remove all background classes
+            const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+            existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+            
+            // Add copilot background
+            gameContainer.classList.add('bg-copilot');
+          }
+          
+          updateCopilotCarousel();
+          // Fade in copilot carousel
+          setTimeout(() => {
+            copilotCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            copilotCarousel.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        } else {
+          defaultContent.style.display = "flex";
+          defaultContent.textContent = currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+          // Reset focus to nav when not in games, apps, friends, gallery, notifications, or settings tab
+          navigationFocus = "nav";
+          // Fade in default content
+          setTimeout(() => {
+            defaultContent.style.transition = `opacity ${fadeOutDuration}ms ease-in`;
+            defaultContent.style.opacity = "1";
+          }, 10); // Small delay to ensure display change takes effect
+        }
+      }, fadeOutDuration);
+      
+      // Update bottom controls
+      updateBottomControls();
+    }
+    
+    function updateBottomControls() {
+      const controlImage = document.getElementById('control-image');
+      const currentTab = tabs[selectedIndex];
+      
+      let newSrc = '';
+      let shouldShow = true;
+      
+      // Determine which image to show
+      if (currentTab === 'games' && navigationFocus === 'carousel') {
+        newSrc = 'assets/btns/play.png';
+      } else if (currentTab === 'apps' && navigationFocus === 'carousel') {
+        // Check which app is currently selected in the apps carousel
+        const currentApp = apps[currentAppIndex];
+        if (currentApp && (currentApp.id === 'netflix' || currentApp.id === 'steam')) {
+          newSrc = 'assets/btns/details.png';
+        } else {
+          newSrc = 'assets/btns/open.png';
+        }
+      } else if (currentTab === 'friends' && navigationFocus === 'carousel') {
+        newSrc = 'assets/btns/message.png';
+      } else if (currentTab === 'notifications' && navigationFocus === 'carousel') {
+        // Check which notification is currently in focus
+        const currentNotification = notifications[currentNotifyIndex];
+        if (currentNotification && ['notify1', 'notify2', 'notify3', 'notify6'].includes(currentNotification.id)) {
+          newSrc = 'assets/btns/notify.png';
+        } else if (currentNotification && ['notify4', 'notify5'].includes(currentNotification.id)) {
+          newSrc = 'assets/btns/update.png';
+        } else if (currentNotification && currentNotification.id === 'notify7') {
+          newSrc = 'assets/btns/video.png';
+        } else {
+          newSrc = 'assets/btns/view.png';
+        }
+      } else if (currentTab === 'gallery' && navigationFocus === 'carousel') {
+        newSrc = 'assets/btns/share.png';
+      } else if (currentTab === 'settings' && navigationFocus === 'carousel') {
+        // Get the current setting
+        const currentSetting = settings[currentSettingIndex];
+        if (currentSetting) {
+          if (currentSetting.type === 'single') {
+            // Single card mapping
+            if (currentSetting.id === 'volume') {
+              newSrc = 'assets/btns/settings/volume.png';
+            } else if (currentSetting.id === 'mic') {
+              newSrc = 'assets/btns/settings/volume.png';
+            } else if (currentSetting.id === 'perform') {
+              newSrc = 'assets/btns/settings/optimize.png';
+            } else if (currentSetting.id === 'brightness') {
+              newSrc = 'assets/btns/settings/brightness.png';
+            } else {
+              newSrc = 'assets/btns/view.png';
+            }
+          } else if (currentSetting.type === 'stack') {
+            // Stack card mapping - get the currently selected item in the stack
+            const selectedItem = currentSetting.items[currentSetting.selectedItem];
+            if (selectedItem) {
+              if (selectedItem.id === 'music') {
+                newSrc = 'assets/btns/settings/toggle.png';
+              } else if (selectedItem.id === 'sfx') {
+                newSrc = 'assets/btns/settings/toggle.png';
+              } else if (selectedItem.id === 'captions') {
+                newSrc = 'assets/btns/settings/toggle.png';
+              } else if (selectedItem.id === 'battery') {
+                newSrc = 'assets/btns/settings/toggle_mode.png';
+              } else if (selectedItem.id === 'wifi') {
+                newSrc = 'assets/btns/settings/toggle.png';
+              } else if (selectedItem.id === 'airplane') {
+                newSrc = 'assets/btns/settings/toggle_mode.png';
+              } else if (selectedItem.id === 'sleep') {
+                newSrc = 'assets/btns/settings/sleep.png';
+              } else if (selectedItem.id === 'restart') {
+                newSrc = 'assets/btns/settings/restart.png';
+              } else if (selectedItem.id === 'shutdown') {
+                newSrc = 'assets/btns/settings/shutdown.png';
+              } else {
+                newSrc = 'assets/btns/view.png';
+              }
+            } else {
+              newSrc = 'assets/btns/view.png';
+            }
+          } else {
+            newSrc = 'assets/btns/view.png';
+          }
+        } else {
+          newSrc = 'assets/btns/view.png';
+        }
+      } else if (currentTab === 'copilot' && navigationFocus === 'carousel') {
+        // Get the current copilot item
+        const currentCopilotItem = copilotItems[currentCopilotIndex];
+        if (currentCopilotItem) {
+          if (currentCopilotItem.type === 'single') {
+            // Single card mapping for copilot items
+            if (currentCopilotItem.id === 'copilot7') {
+              newSrc = 'assets/btns/copilot/talk.png';
+            } else if (currentCopilotItem.id === 'copilot6') {
+              newSrc = 'assets/btns/copilot/remind.png';
+            } else if (currentCopilotItem.id === 'copilot5') {
+              newSrc = 'assets/btns/copilot/video.png';
+            } else if (currentCopilotItem.id === 'copilot2') {
+              newSrc = 'assets/btns/copilot/controller.png';
+            } else if (currentCopilotItem.id === 'copilot1') {
+              newSrc = 'assets/btns/copilot/video.png';
+            } else if (currentCopilotItem.id === 'copilot3') {
+              newSrc = 'assets/btns/copilot/party.png';
+            } else if (currentCopilotItem.id === 'copilot4') {
+              newSrc = 'assets/btns/copilot/share.png';
+            } else {
+              newSrc = 'assets/btns/view.png';
+            }
+          } else if (currentCopilotItem.type === 'stack') {
+            // Stack card mapping
+            const selectedItem = currentCopilotItem.items[currentCopilotItem.selectedItem];
+            if (selectedItem) {
+              if (selectedItem.id === 'edit') {
+                newSrc = 'assets/btns/copilot/edit.png';
+              } else if (selectedItem.id === 'walkthru') {
+                newSrc = 'assets/btns/copilot/walkthru.png';
+              } else if (selectedItem.id === 'reco') {
+                newSrc = 'assets/btns/copilot/reco.png';
+              } else {
+                newSrc = 'assets/btns/view.png';
+              }
+            } else {
+              newSrc = 'assets/btns/view.png';
+            }
+          } else {
+            newSrc = 'assets/btns/view.png';
+          }
+        } else {
+          newSrc = 'assets/btns/view.png';
+        }
+      } else if (currentTab === 'games' && navigationFocus === 'nav') {
+        newSrc = 'assets/btns/games.png';
+      } else if (currentTab === 'apps' && navigationFocus === 'nav') {
+        newSrc = 'assets/btns/apps.png';
+      } else if (currentTab === 'friends' && navigationFocus === 'nav') {
+        newSrc = 'assets/btns/friends.png';
+      } else if (currentTab === 'gallery' && navigationFocus === 'nav') {
+        newSrc = 'assets/btns/captures.png';
+      } else if (currentTab === 'notifications' && navigationFocus === 'nav') {
+        newSrc = 'assets/btns/silence_all.png';
+      } else if (currentTab === 'copilot' && navigationFocus === 'nav') {
+        newSrc = 'assets/btns/copilot/launch.png';
+      } else if (currentTab === 'settings') {
+        newSrc = 'assets/btns/view_all.png';
+      } else if (currentTab === 'copilot') {
+        shouldShow = false;
+      }
+      
+      // If image should be hidden
+      if (!shouldShow) {
+        controlImage.style.opacity = '0';
+        setTimeout(() => {
+          controlImage.style.display = 'none';
+        }, 125); // Half of transition duration
+        return;
+      }
+      
+      // If same image, no need to transition
+      if (controlImage.src.endsWith(newSrc)) {
+        controlImage.style.display = 'block';
+        controlImage.style.opacity = '0.8';
+        return;
+      }
+      
+      // Fade out current image
+      controlImage.style.opacity = '0';
+      
+      // After fade out completes, change image and fade in
+      setTimeout(() => {
+        controlImage.src = newSrc;
+        controlImage.style.display = 'block';
+        // Small delay to ensure image loads
+        setTimeout(() => {
+          controlImage.style.opacity = '0.8';
+        }, 25);
+      }, 125); // Half of transition duration
+    }
+
+    function selectTab(i) {
+      selectedIndex = i;
+      navigationFocus = "nav"; // Reset focus to nav when changing tabs
+      renderNav();
+      // Play navigation sound
+      if (window.playNavSound) {
+        window.playNavSound();
+      }
+    }
+
+    function updateFocusVisuals() {
+      // Update visual indicators for navigation focus
+      const navItems = document.querySelectorAll('.nav-item');
+      const gamesCarouselWrapper = document.querySelector('.games-carousel-wrapper');
+      const appsCarouselWrapper = document.querySelector('.apps-carousel-wrapper');
+      const friendsCarouselWrapper = document.querySelector('.friends-carousel-wrapper');
+      const notifyCarouselWrapper = document.querySelector('.notify-carousel-wrapper');
+      const galleryCarouselWrapper = document.querySelector('.gallery-carousel-wrapper');
+      const settingsCarouselWrapper = document.querySelector('.settings-carousel-wrapper');
+      const copilotCarouselWrapper = document.querySelector('.copilot-carousel-wrapper');
+      const currentTab = tabs[selectedIndex];
+      
+      console.log('Navigation focus:', navigationFocus); // Debug logging
+      
+      if (navigationFocus === "nav") {
+        // Navigation bar focused - keep both at full opacity but make carousel images uniform
+        nav.style.opacity = "1";
+        
+        // Add inactive class to the appropriate carousel wrapper
+        if (currentTab === "games" && gamesCarouselWrapper) {
+          gamesCarouselWrapper.style.opacity = "1";
+          gamesCarouselWrapper.classList.add('carousel-inactive');
+          updateGamesCarousel(); // Update games to remove focus state
+        } else if (currentTab === "apps" && appsCarouselWrapper) {
+          appsCarouselWrapper.style.opacity = "1";
+          appsCarouselWrapper.classList.add('carousel-inactive');
+          updateAppsCarousel(); // Update apps carousel
+        } else if (currentTab === "friends" && friendsCarouselWrapper) {
+          friendsCarouselWrapper.style.opacity = "1";
+          friendsCarouselWrapper.classList.add('carousel-inactive');
+          updateFriendsCarousel(); // Update friends carousel
+        } else if (currentTab === "notifications" && notifyCarouselWrapper) {
+          notifyCarouselWrapper.style.opacity = "1";
+          notifyCarouselWrapper.classList.add('carousel-inactive');
+          updateNotifyCarousel(); // Update notify carousel
+        } else if (currentTab === "gallery" && galleryCarouselWrapper) {
+          galleryCarouselWrapper.style.opacity = "1";
+          galleryCarouselWrapper.classList.add('carousel-inactive');
+          updateGalleryCarousel(); // Update gallery to remove focus state
+        } else if (currentTab === "settings" && settingsCarouselWrapper) {
+          settingsCarouselWrapper.style.opacity = "1";
+          settingsCarouselWrapper.classList.add('carousel-inactive');
+          updateSettingsCarousel(); // Update settings to remove focus state
+        } else if (currentTab === "copilot" && copilotCarouselWrapper) {
+          copilotCarouselWrapper.style.opacity = "1";
+          copilotCarouselWrapper.classList.add('carousel-inactive');
+          updateCopilotCarousel(); // Update copilot to remove focus state
+        }
+      } else if (navigationFocus === "carousel" && (currentTab === "games" || currentTab === "apps" || currentTab === "friends" || currentTab === "gallery" || currentTab === "notifications" || currentTab === "settings" || currentTab === "copilot")) {
+        // Carousel focused - keep both at full opacity and restore normal carousel behavior
+        nav.style.opacity = "1";
+        
+        // Remove inactive class from the appropriate carousel wrapper
+        if (currentTab === "games" && gamesCarouselWrapper) {
+          gamesCarouselWrapper.style.opacity = "1";
+          gamesCarouselWrapper.classList.remove('carousel-inactive');
+          updateGamesCarousel(); // Update games to show focus state
+        } else if (currentTab === "apps" && appsCarouselWrapper) {
+          appsCarouselWrapper.style.opacity = "1";
+          appsCarouselWrapper.classList.remove('carousel-inactive');
+          updateAppsCarousel(); // Update apps carousel
+        } else if (currentTab === "friends" && friendsCarouselWrapper) {
+          friendsCarouselWrapper.style.opacity = "1";
+          friendsCarouselWrapper.classList.remove('carousel-inactive');
+          updateFriendsCarousel(); // Update friends carousel
+        } else if (currentTab === "notifications" && notifyCarouselWrapper) {
+          notifyCarouselWrapper.style.opacity = "1";
+          notifyCarouselWrapper.classList.remove('carousel-inactive');
+          updateNotifyCarousel(); // Update notify carousel
+        } else if (currentTab === "gallery" && galleryCarouselWrapper) {
+          galleryCarouselWrapper.style.opacity = "1";
+          galleryCarouselWrapper.classList.remove('carousel-inactive');
+          updateGalleryCarousel(); // Update gallery to show focus state
+        } else if (currentTab === "settings" && settingsCarouselWrapper) {
+          settingsCarouselWrapper.style.opacity = "1";
+          settingsCarouselWrapper.classList.remove('carousel-inactive');
+          updateSettingsCarousel(); // Update settings to show focus state
+        } else if (currentTab === "copilot" && copilotCarouselWrapper) {
+          copilotCarouselWrapper.style.opacity = "1";
+          copilotCarouselWrapper.classList.remove('carousel-inactive');
+          updateCopilotCarousel(); // Update copilot to show focus state
+        }
+      }
+      
+      // Update navigation images based on focus change
+      navItems.forEach((item, i) => {
+        const img = item.querySelector('img');
+        const tab = tabs[i];
+        
+        if (i === selectedIndex) {
+          if ((tab === "games" || tab === "apps" || tab === "friends" || tab === "gallery" || tab === "notifications" || tab === "settings" || tab === "copilot") && navigationFocus === "carousel") {
+            img.src = `assets/nav/${tab}_active.png`;
+          } else {
+            img.src = `assets/nav/${tab}_select.png`;
+          }
+        } else {
+          img.src = `assets/nav/${tab}_default.png`;
+        }
+      });
+      
+      // Update bottom controls when focus changes
+      updateBottomControls();
+    }
+
+    // Enhanced keyboard support with two-level navigation
+    document.addEventListener("keydown", (e) => {
+      if (navigationFocus === "nav") {
+        // Navigation bar is focused - left/right moves through tabs
+        if (e.key === "ArrowRight") {
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+          // Play navigation sound
+          if (window.playNavSound) {
+            window.playNavSound();
+          }
+          e.preventDefault();
+        } else if (e.key === "ArrowLeft") {
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+          // Play navigation sound
+          if (window.playNavSound) {
+            window.playNavSound();
+          }
+          e.preventDefault();
+        } else if (e.key === "ArrowDown") {
+          // Move focus down to carousel (games, apps, friends, gallery, notifications, settings, or copilot)
+          if (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings" || tabs[selectedIndex] === "copilot") {
+            navigationFocus = "carousel";
+            updateFocusVisuals();
+            // Play carousel sound when moving from nav to carousel
+            if (window.playCarouselSound) {
+              window.playCarouselSound();
+            }
+          }
+          e.preventDefault();
+        }
+      } else if (navigationFocus === "carousel") {
+        // Carousel is focused - left/right moves through items
+        if (e.key === "ArrowRight") {
+          if (tabs[selectedIndex] === "games") {
+            navigateGamesCarousel('right');
+          } else if (tabs[selectedIndex] === "apps") {
+            navigateAppsCarousel('right');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('right');
+          } else if (tabs[selectedIndex] === "gallery") {
+            navigateGalleryCarousel('right');
+          } else if (tabs[selectedIndex] === "notifications") {
+            navigateNotifyCarousel('right');
+          } else if (tabs[selectedIndex] === "settings") {
+            navigateSettingsCarousel('right');
+          } else if (tabs[selectedIndex] === "copilot") {
+            navigateCopilotCarousel('right');
+          }
+          // Play carousel navigation sound
+          if (window.playCarouselNavSound) {
+            window.playCarouselNavSound();
+          }
+          e.preventDefault();
+        } else if (e.key === "ArrowLeft") {
+          if (tabs[selectedIndex] === "games") {
+            navigateGamesCarousel('left');
+          } else if (tabs[selectedIndex] === "apps") {
+            navigateAppsCarousel('left');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('left');
+          } else if (tabs[selectedIndex] === "gallery") {
+            navigateGalleryCarousel('left');
+          } else if (tabs[selectedIndex] === "notifications") {
+            navigateNotifyCarousel('left');
+          } else if (tabs[selectedIndex] === "settings") {
+            navigateSettingsCarousel('left');
+          } else if (tabs[selectedIndex] === "copilot") {
+            navigateCopilotCarousel('left');
+          }
+          // Play carousel navigation sound
+          if (window.playCarouselNavSound) {
+            window.playCarouselNavSound();
+          }
+          e.preventDefault();
+        } else if (e.key === "ArrowUp") {
+          // Move focus back up to navigation bar, or navigate stack items for settings/copilot
+          if (tabs[selectedIndex] === "settings") {
+            // Try to navigate within stack first, if it returns false then go to nav bar
+            if (!navigateStackItems('up')) {
+              navigationFocus = "nav";
+              updateFocusVisuals();
+              // Play nav sound when moving from carousel to nav
+              if (window.playNavSound) {
+                window.playNavSound();
+              }
+            }
+          } else if (tabs[selectedIndex] === "copilot") {
+            // Try to navigate within stack first, if it returns false then go to nav bar
+            if (!navigateCopilotStackItems('up')) {
+              navigationFocus = "nav";
+              updateFocusVisuals();
+              // Play nav sound when moving from carousel to nav
+              if (window.playNavSound) {
+                window.playNavSound();
+              }
+            }
+          } else {
+            navigationFocus = "nav";
+            updateFocusVisuals();
+            // Play nav sound when moving from carousel to nav
+            if (window.playNavSound) {
+              window.playNavSound();
+            }
+          }
+          e.preventDefault();
+        } else if (e.key === "ArrowDown") {
+          // Navigate stack items for settings/copilot, but don't cycle at bottom
+          if (tabs[selectedIndex] === "settings") {
+            navigateStackItems('down'); // If it returns false, just stay at bottom item
+          } else if (tabs[selectedIndex] === "copilot") {
+            navigateCopilotStackItems('down'); // If it returns false, just stay at bottom item
+          }
+          e.preventDefault();
+        }
+      }
+      
+      if (e.key === "Enter") {
+        if (navigationFocus === "nav") {
+          selectTab(selectedIndex);
+        }
+      } else if (e.key === "d") {
+        e.preventDefault(); // Prevent zoom control
+      }
+    });
+
+    // Enhanced Gamepad support with two-level navigation
+    let lastGamepadInput = { axes: [0, 0], buttons: [] };
+    
+    function handleGamepadInput() {
+      const gamepads = navigator.getGamepads();
+      if (!gamepads) return;
+
+      const gp = gamepads[0]; // Assume single controller for simplicity
+      if (!gp) return;
+
+      // Deadzone for analog sticks
+      const deadzone = 0.5;
+      const axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
+      const axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
+
+      // Prevent rapid-fire input by checking if input changed
+      const inputChanged = Math.abs(axisX - lastGamepadInput.axes[0]) > 0.1 || 
+                          Math.abs(axisY - lastGamepadInput.axes[1]) > 0.1;
+
+      if (inputChanged) {
+        if (navigationFocus === "nav") {
+          // Navigation bar focused - left/right controls tabs, down enters carousel
+          if (axisX > deadzone) {
+            selectedIndex = (selectedIndex + 1) % tabs.length;
+            renderNav();
+            // Play navigation sound for gamepad
+            if (window.playNavSound) {
+              window.playNavSound();
+            }
+          } else if (axisX < -deadzone) {
+            selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+            renderNav();
+            // Play navigation sound for gamepad
+            if (window.playNavSound) {
+              window.playNavSound();
+            }
+          } else if (axisY > deadzone && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings" || tabs[selectedIndex] === "copilot")) {
+            // Move focus down to carousel
+            navigationFocus = "carousel";
+            updateFocusVisuals();
+            // Play carousel sound when moving from nav to carousel via gamepad
+            if (window.playCarouselSound) {
+              window.playCarouselSound();
+            }
+          }
+        } else if (navigationFocus === "carousel") {
+          // Carousel focused - left/right controls items, up returns to nav
+          if (axisX > deadzone) {
+            if (tabs[selectedIndex] === "games") {
+              navigateGamesCarousel('right');
+            } else if (tabs[selectedIndex] === "apps") {
+              navigateAppsCarousel('right');
+            } else if (tabs[selectedIndex] === "friends") {
+              navigateFriendsCarousel('right');
+            } else if (tabs[selectedIndex] === "gallery") {
+              navigateGalleryCarousel('right');
+            } else if (tabs[selectedIndex] === "notifications") {
+              navigateNotifyCarousel('right');
+            } else if (tabs[selectedIndex] === "settings") {
+              navigateSettingsCarousel('right');
+            } else if (tabs[selectedIndex] === "copilot") {
+              navigateCopilotCarousel('right');
+            }
+            // Play carousel navigation sound
+            if (window.playCarouselNavSound) {
+              window.playCarouselNavSound();
+            }
+          } else if (axisX < -deadzone) {
+            if (tabs[selectedIndex] === "games") {
+              navigateGamesCarousel('left');
+            } else if (tabs[selectedIndex] === "apps") {
+              navigateAppsCarousel('left');
+            } else if (tabs[selectedIndex] === "friends") {
+              navigateFriendsCarousel('left');
+            } else if (tabs[selectedIndex] === "gallery") {
+              navigateGalleryCarousel('left');
+            } else if (tabs[selectedIndex] === "notifications") {
+              navigateNotifyCarousel('left');
+            } else if (tabs[selectedIndex] === "settings") {
+              navigateSettingsCarousel('left');
+            } else if (tabs[selectedIndex] === "copilot") {
+              navigateCopilotCarousel('left');
+            }
+            // Play carousel navigation sound
+            if (window.playCarouselNavSound) {
+              window.playCarouselNavSound();
+            }
+          } else if (axisY < -deadzone) {
+            // Move focus back up to navigation, or navigate stack items for settings/copilot
+            if (tabs[selectedIndex] === "settings") {
+              // Try to navigate within stack first, if it returns false then go to nav bar
+              if (!navigateStackItems('up')) {
+                navigationFocus = "nav";
+                updateFocusVisuals();
+                // Play nav sound when moving from carousel to nav
+                if (window.playNavSound) {
+                  window.playNavSound();
+                }
+              }
+            } else if (tabs[selectedIndex] === "copilot") {
+              // Try to navigate within stack first, if it returns false then go to nav bar
+              if (!navigateCopilotStackItems('up')) {
+                navigationFocus = "nav";
+                updateFocusVisuals();
+                // Play nav sound when moving from carousel to nav
+                if (window.playNavSound) {
+                  window.playNavSound();
+                }
+              }
+            } else {
+              navigationFocus = "nav";
+              updateFocusVisuals();
+              // Play nav sound when moving from carousel to nav
+              if (window.playNavSound) {
+                window.playNavSound();
+              }
+            }
+          } else if (axisY > deadzone) {
+            // Navigate stack items for settings/copilot, but don't cycle at bottom
+            if (tabs[selectedIndex] === "settings") {
+              navigateStackItems('down'); // If it returns false, just stay at bottom item
+            } else if (tabs[selectedIndex] === "copilot") {
+              navigateCopilotStackItems('down'); // If it returns false, just stay at bottom item
+            }
+          }
+        }
+      }
+
+      // D-pad support with two-level navigation
+      if (gp.buttons[15]?.pressed && !lastGamepadInput.buttons[15]) { // D-pad right
+        if (navigationFocus === "nav") {
+          selectedIndex = (selectedIndex + 1) % tabs.length;
+          renderNav();
+        } else if (navigationFocus === "carousel") {
+          if (tabs[selectedIndex] === "games") {
+            navigateGamesCarousel('right');
+          } else if (tabs[selectedIndex] === "apps") {
+            navigateAppsCarousel('right');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('right');
+          }
+        }
+      } else if (gp.buttons[14]?.pressed && !lastGamepadInput.buttons[14]) { // D-pad left
+        if (navigationFocus === "nav") {
+          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
+          renderNav();
+        } else if (navigationFocus === "carousel") {
+          if (tabs[selectedIndex] === "games") {
+            navigateGamesCarousel('left');
+          } else if (tabs[selectedIndex] === "apps") {
+            navigateAppsCarousel('left');
+          } else if (tabs[selectedIndex] === "friends") {
+            navigateFriendsCarousel('left');
+          }
+        }
+      } else if (gp.buttons[12]?.pressed && !lastGamepadInput.buttons[12]) { // D-pad up
+        if (navigationFocus === "carousel") {
+          // Move focus back to navigation
+          navigationFocus = "nav";
+          updateFocusVisuals();
+        }
+      } else if (gp.buttons[13]?.pressed && !lastGamepadInput.buttons[13]) { // D-pad down
+        if (navigationFocus === "nav" && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends")) {
+          // Move focus down to carousel
+          navigationFocus = "carousel";
+          updateFocusVisuals();
+        }
+      } else if (gp.buttons[0]?.pressed && !lastGamepadInput.buttons[0]) { // A button
+        if (navigationFocus === "nav") {
+          selectTab(selectedIndex);
+        }
+      }
+
+      // Store current state for next comparison
+      lastGamepadInput.axes = [axisX, axisY];
+      lastGamepadInput.buttons = gp.buttons.map(b => b?.pressed || false);
+    }
+
+    // Poll gamepad input
+    setInterval(handleGamepadInput, 100);
+
+    // Settings system - control cards with single and stacked items
+    let settings = [];
+    let currentSettingIndex = 0;
+    
+    let copilotItems = [];
+    let currentCopilotIndex = 0;
+    
+    // Settings configuration with single items and stacked columns
+    const settingsConfig = [
+      {
+        id: "volume",
+        title: "Volume",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "mic", 
+        title: "Microphone",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "audio-stack",
+        title: "Audio",
+        type: "stack", 
+        hasBackground: false,
+        selectedItem: 0, // Default to first item (music)
+        items: [
+          { id: "music", title: "Music" },
+          { id: "sfx", title: "Sound Effects" },
+          { id: "captions", title: "Captions" }
+        ]
+      },
+      {
+        id: "perform",
+        title: "Performance",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "connectivity-stack",
+        title: "Connectivity",
+        type: "stack",
+        hasBackground: false,
+        selectedItem: 0, // Default to first item (battery)
+        items: [
+          { id: "battery", title: "Battery" },
+          { id: "wifi", title: "WiFi" },
+          { id: "airplane", title: "Airplane Mode" }
+        ]
+      },
+      {
+        id: "brightness",
+        title: "Brightness",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "power-stack",
+        title: "Power",
+        type: "stack",
+        hasBackground: false,
+        selectedItem: 0, // Default to first item (sleep)
+        items: [
+          { id: "sleep", title: "Sleep" },
+          { id: "restart", title: "Restart" },
+          { id: "shutdown", title: "Shutdown" }
+        ]
+      }
+    ];
+    
+    // Copilot configuration - similar structure to settings
+    const copilotConfig = [
+      {
+        id: "copilot7",
+        title: "Code Generation",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "tools-stack",
+        title: "AI Tools",
+        type: "stack",
+        hasBackground: false,
+        selectedItem: 0,
+        items: [
+          { id: "edit", title: "Code Editor" },
+          { id: "walkthru", title: "Walkthrough" },
+          { id: "reco", title: "Recommendations" }
+        ]
+      },
+      {
+        id: "copilot6",
+        title: "Smart Search",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "copilot5",
+        title: "Documentation",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "copilot2", 
+        title: "Code Completion",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "copilot1",
+        title: "AI Assistant",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "copilot3",
+        title: "Chat Assistant",
+        type: "single",
+        hasBackground: false
+      },
+      {
+        id: "copilot4",
+        title: "Code Review",
+        type: "single",
+        hasBackground: false
+      }
+    ];
+    
+    function initializeSettings() {
+      console.log('⚙️ Initializing settings controls...');
+      settings = [...settingsConfig];
+      console.log(`Created ${settings.length} settings controls:`, settings.map(s => s.title));
+      
+      createSettingsCards();
+      updateSettingsCarousel();
+    }
+    
+    function initializeCopilot() {
+      console.log('🤖 Initializing copilot items...');
+      copilotItems = [...copilotConfig];
+      console.log(`Created ${copilotItems.length} copilot items:`, copilotItems.map(c => c.title));
+      
+      createCopilotCards();
+      updateCopilotCarousel();
+    }
+    
+    function createSettingsCards() {
+      const carouselTrack = document.querySelector('.settings-carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      settings.forEach((setting, index) => {
+        const settingCard = document.createElement('div');
+        
+        if (setting.type === 'single') {
+          settingCard.className = 'settings-card';
+          settingCard.dataset.setting = setting.id;
+          
+          const settingImage = document.createElement('img');
+          settingImage.src = `assets/settings/${setting.id}.png`;
+          settingImage.alt = setting.title;
+          settingImage.className = 'settings-image';
+          
+          settingCard.appendChild(settingImage);
+        } else if (setting.type === 'stack') {
+          settingCard.className = 'settings-stack-card';
+          settingCard.dataset.setting = setting.id;
+          
+          // For stacked items, create a container with all items stacked vertically
+          const stackContainer = document.createElement('div');
+          stackContainer.className = 'stack-container';
+          
+          setting.items.forEach((item, itemIndex) => {
+            const stackItem = document.createElement('div');
+            stackItem.className = 'stack-item';
+            if (itemIndex === setting.selectedItem) {
+              stackItem.classList.add('focused');
+            }
+            
+            const itemImage = document.createElement('img');
+            itemImage.src = `assets/settings/${item.id}.png`;
+            itemImage.alt = item.title;
+            itemImage.className = 'stack-item-image';
+            
+            stackItem.appendChild(itemImage);
+            stackContainer.appendChild(stackItem);
+          });
+          
+          settingCard.appendChild(stackContainer);
+        }
+        
+        carouselTrack.appendChild(settingCard);
+      });
+    }
+    
+    function createCopilotCards() {
+      const carouselTrack = document.querySelector('.copilot-carousel-track');
+      carouselTrack.innerHTML = ''; // Clear existing cards
+      
+      console.log('Creating copilot cards...', copilotItems);
+      
+      copilotItems.forEach((copilotItem, index) => {
+        console.log(`Creating copilot item ${index}:`, copilotItem);
+        const copilotCard = document.createElement('div');
+        
+        if (copilotItem.type === 'single') {
+          copilotCard.className = 'copilot-card';
+          
+          const copilotImage = document.createElement('img');
+          copilotImage.className = 'copilot-image';
+          copilotImage.src = `assets/copilot/${copilotItem.id}.png`;
+          copilotImage.alt = copilotItem.title;
+          console.log(`Single image src: ${copilotImage.src}`);
+          
+          copilotCard.appendChild(copilotImage);
+          
+        } else if (copilotItem.type === 'stack') {
+          copilotCard.className = 'copilot-stack-card';
+          console.log('Creating stack card for:', copilotItem);
+          
+          const stackContainer = document.createElement('div');
+          stackContainer.className = 'stack-container';
+          
+          copilotItem.items.forEach((item, itemIndex) => {
+            console.log(`Creating stack item ${itemIndex}:`, item);
+            const stackItem = document.createElement('div');
+            stackItem.className = 'stack-item';
+            if (itemIndex === copilotItem.selectedItem) {
+              stackItem.classList.add('focused');
+              console.log(`Item ${itemIndex} is focused`);
+            }
+            
+            const itemImage = document.createElement('img');
+            itemImage.className = 'stack-item-image';
+            itemImage.src = `assets/copilot/${item.id}.png`;
+            itemImage.alt = item.title;
+            console.log(`Stack item image src: ${itemImage.src}`);
+            
+            stackItem.appendChild(itemImage);
+            stackContainer.appendChild(stackItem);
+          });
+          
+          copilotCard.appendChild(stackContainer);
+        }
+        
+        carouselTrack.appendChild(copilotCard);
+      });
+    }
+    
+    function updateSettingsCarousel() {
+      const settingsCards = document.querySelectorAll('.settings-carousel-track .settings-card, .settings-carousel-track .settings-stack-card');
+      const totalSettings = settingsCards.length;
+      
+      if (totalSettings === 0) return; // No settings to display
+      
+      // Update card positions and focus states
+      settingsCards.forEach((card, index) => {
+        // Remove all position classes
+        card.classList.remove('center', 'left', 'right', 'far-left', 'far-right', 'hidden', 'hidden-left', 'hidden-right');
+        
+        // Calculate relative position
+        const relativeIndex = (index - currentSettingIndex + totalSettings) % totalSettings;
+        
+        const setting = settings[index];
+        
+        if (relativeIndex === 0) {
+          // Center position
+          card.classList.add('center');
+          updateCardFocusState(card, setting, true);
+          
+        } else if (relativeIndex === 1) {
+          // Right position
+          card.classList.add('right');
+          updateCardFocusState(card, setting, false);
+          
+        } else if (relativeIndex === totalSettings - 1) {
+          // Left position
+          card.classList.add('left');
+          updateCardFocusState(card, setting, false);
+          
+        } else if (relativeIndex === totalSettings - 2) {
+          // Far left peek position
+          card.classList.add('far-left');
+          updateCardFocusState(card, setting, false);
+          
+        } else if (relativeIndex === 2) {
+          // Far right peek position
+          card.classList.add('far-right');
+          updateCardFocusState(card, setting, false);
+          
+        } else {
+          // Hidden positions
+          card.classList.add('hidden');
+          if (relativeIndex < totalSettings / 2) {
+            card.classList.add('hidden-right');
+          } else {
+            card.classList.add('hidden-left');
+          }
+          updateCardFocusState(card, setting, false);
+        }
+      });
+    }
+    
+    function updateCopilotCarousel() {
+      const copilotCards = document.querySelectorAll('.copilot-carousel-track .copilot-card, .copilot-carousel-track .copilot-stack-card');
+      const totalCopilot = copilotCards.length;
+      
+      if (totalCopilot === 0) return; // No copilot items to display
+      
+      // Update card positions and focus states
+      copilotCards.forEach((card, index) => {
+        // Remove all position classes
+        card.classList.remove('center', 'left', 'right', 'far-left', 'far-right', 'hidden', 'hidden-left', 'hidden-right');
+        
+        // Calculate relative position
+        const relativeIndex = (index - currentCopilotIndex + totalCopilot) % totalCopilot;
+        
+        const copilotItem = copilotItems[index];
+        
+        if (relativeIndex === 0) {
+          // Center position
+          card.classList.add('center');
+          updateCopilotCardFocusState(card, copilotItem, true);
+          
+        } else if (relativeIndex === 1) {
+          // Right position
+          card.classList.add('right');
+          updateCopilotCardFocusState(card, copilotItem, false);
+          
+        } else if (relativeIndex === totalCopilot - 1) {
+          // Left position
+          card.classList.add('left');
+          updateCopilotCardFocusState(card, copilotItem, false);
+          
+        } else if (relativeIndex === totalCopilot - 2) {
+          // Far left peek position
+          card.classList.add('far-left');
+          updateCopilotCardFocusState(card, copilotItem, false);
+          
+        } else if (relativeIndex === 2) {
+          // Far right peek position
+          card.classList.add('far-right');
+          updateCopilotCardFocusState(card, copilotItem, false);
+          
+        } else {
+          // Hidden positions
+          card.classList.add('hidden');
+          if (relativeIndex < totalCopilot / 2) {
+            card.classList.add('hidden-right');
+          } else {
+            card.classList.add('hidden-left');
+          }
+          updateCopilotCardFocusState(card, copilotItem, false);
+        }
+      });
+    }
+    
+    function updateCardFocusState(card, setting, isCenter) {
+      const isCarouselFocused = navigationFocus === "carousel";
+      
+      if (setting.type === 'single') {
+        const settingsImage = card.querySelector('.settings-image');
+        if (settingsImage) {
+          if (isCenter && isCarouselFocused) {
+            settingsImage.src = `assets/settings/${setting.id}_focus.png`;
+          } else {
+            settingsImage.src = `assets/settings/${setting.id}.png`;
+          }
+        }
+      } else if (setting.type === 'stack') {
+        const stackItems = card.querySelectorAll('.stack-item');
+        
+        stackItems.forEach((item, itemIndex) => {
+          const itemImage = item.querySelector('.stack-item-image');
+          const itemData = setting.items[itemIndex];
+          
+          // Remove focus classes
+          item.classList.remove('focused');
+          
+          if (isCenter && isCarouselFocused && itemIndex === setting.selectedItem) {
+            // Only the selected item in the center card gets focus styling
+            item.classList.add('focused');
+            if (itemImage) {
+              itemImage.src = `assets/settings/${itemData.id}_focus.png`;
+            }
+          } else {
+            if (itemImage) {
+              itemImage.src = `assets/settings/${itemData.id}.png`;
+            }
+          }
+          
+          // Update selected state
+          if (itemIndex === setting.selectedItem) {
+            item.classList.add('selected');
+          } else {
+            item.classList.remove('selected');
+          }
+        });
+      }
+    }
+    
+    function updateCopilotCardFocusState(card, copilotItem, isCenter) {
+      const isCarouselFocused = navigationFocus === "carousel";
+      
+      if (copilotItem.type === 'single') {
+        const copilotImage = card.querySelector('.copilot-image');
+        if (copilotImage) {
+          if (isCenter && isCarouselFocused) {
+            copilotImage.src = `assets/copilot/${copilotItem.id}_focus.png`;
+          } else {
+            copilotImage.src = `assets/copilot/${copilotItem.id}.png`;
+          }
+        }
+      } else if (copilotItem.type === 'stack') {
+        const stackItems = card.querySelectorAll('.stack-item');
+        
+        stackItems.forEach((item, itemIndex) => {
+          const itemImage = item.querySelector('.stack-item-image');
+          const itemData = copilotItem.items[itemIndex];
+          
+          // Remove focus classes
+          item.classList.remove('focused');
+          
+          if (isCenter && isCarouselFocused && itemIndex === copilotItem.selectedItem) {
+            // Only the selected item in the center card gets focus styling
+            item.classList.add('focused');
+            if (itemImage) {
+              itemImage.src = `assets/copilot/${itemData.id}_focus.png`;
+            }
+          } else {
+            if (itemImage) {
+              itemImage.src = `assets/copilot/${itemData.id}.png`;
+            }
+          }
+          
+          // Update selected state
+          if (itemIndex === copilotItem.selectedItem) {
+            item.classList.add('selected');
+          } else {
+            item.classList.remove('selected');
+          }
+        });
+      }
+    }
+    
+    function navigateSettingsCarousel(direction) {
+      const totalSettings = settings.length;
+      if (direction === 'right') {
+        currentSettingIndex = (currentSettingIndex + 1) % totalSettings;
+      } else if (direction === 'left') {
+        currentSettingIndex = (currentSettingIndex - 1 + totalSettings) % totalSettings;
+      }
+      updateSettingsCarousel();
+      updateBottomControls();
+    }
+    
+    function navigateStackItems(direction) {
+      const currentSetting = settings[currentSettingIndex];
+      if (currentSetting.type !== 'stack') return false;
+      
+      const totalItems = currentSetting.items.length;
+      
+      if (direction === 'down') {
+        // Check if we're at the last item - if so, don't cycle, return false to allow other navigation
+        if (currentSetting.selectedItem === totalItems - 1) {
+          return false; // Don't handle, let other navigation take over
+        }
+        // Move to next item in stack
+        currentSetting.selectedItem = currentSetting.selectedItem + 1;
+      } else if (direction === 'up') {
+        // Check if we're at the first item - if so, don't cycle, return false to allow navigation to nav bar
+        if (currentSetting.selectedItem === 0) {
+          return false; // Don't handle, let other navigation take over
+        }
+        // Move to previous item in stack
+        currentSetting.selectedItem = currentSetting.selectedItem - 1;
+      }
+      
+      // Update the displayed images and focus states
+      updateSettingsCarousel();
+      updateBottomControls(); // Update button directions when navigating within stack
+      
+      // Play carousel navigation sound for stack item focus
+      if (window.playCarouselNavSound) {
+        window.playCarouselNavSound();
+      }
+      
+      return true; // Handled the navigation
+    }
+    
+    function navigateCopilotCarousel(direction) {
+      const totalCopilot = copilotItems.length;
+      if (direction === 'right') {
+        currentCopilotIndex = (currentCopilotIndex + 1) % totalCopilot;
+      } else if (direction === 'left') {
+        currentCopilotIndex = (currentCopilotIndex - 1 + totalCopilot) % totalCopilot;
+      }
+      updateCopilotCarousel();
+      updateBottomControls();
+    }
+    
+    function navigateCopilotStackItems(direction) {
+      const currentCopilotItem = copilotItems[currentCopilotIndex];
+      if (currentCopilotItem.type !== 'stack') return false;
+      
+      const totalItems = currentCopilotItem.items.length;
+      
+      if (direction === 'down') {
+        // Check if we're at the last item - if so, don't cycle, return false to allow other navigation
+        if (currentCopilotItem.selectedItem === totalItems - 1) {
+          return false; // Don't handle, let other navigation take over
+        }
+        // Move to next item in stack
+        currentCopilotItem.selectedItem = currentCopilotItem.selectedItem + 1;
+      } else if (direction === 'up') {
+        // Check if we're at the first item - if so, don't cycle, return false to allow navigation to nav bar
+        if (currentCopilotItem.selectedItem === 0) {
+          return false; // Don't handle, let other navigation take over
+        }
+        // Move to previous item in stack
+        currentCopilotItem.selectedItem = currentCopilotItem.selectedItem - 1;
+      }
+      
+      // Update the displayed images and focus states
+      updateCopilotCarousel();
+      updateBottomControls(); // Update button directions when navigating within stack
+      
+      // Play carousel navigation sound for stack item focus
+      if (window.playCarouselNavSound) {
+        window.playCarouselNavSound();
+      }
+      
+      return true; // Handled the navigation
+    }
+
+    // Initialize the interface
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🎮 Starting ROG Ally Game Interface...');
+      await initializeGames();
+      await initializeApps();
+      await initializeFriends();
+      await initializeNotifications();
+      await initializeGallery();
+      await initializeSettings();
+      await initializeCopilot();
+      createDynamicCSS(); // Create CSS after games, apps, friends, notifications, gallery, settings, and copilot are loaded
+      renderNav();
+    });
+  </script>
+
+  <script src="gamepad.js"></script>
+  <script src="keyboard.js"></script>
+  <script src="input.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
