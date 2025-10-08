@@ -2076,7 +2076,8 @@
         }
       }
 
-      // D-pad support with two-level navigation
+      // D-pad support with two-level navigation - DISABLED: Using d-pad simulation system instead
+      /*
       if (gp.buttons[15]?.pressed && !lastGamepadInput.buttons[15]) { // D-pad right
         if (navigationFocus === "nav") {
           selectedIndex = (selectedIndex + 1) % tabs.length;
@@ -2115,7 +2116,7 @@
           navigationFocus = "carousel";
           updateFocusVisuals();
         }
-      } else if (gp.buttons[0]?.pressed && !lastGamepadInput.buttons[0]) { // A button
+      } else */if (gp.buttons[0]?.pressed && !lastGamepadInput.buttons[0]) { // A button
         if (navigationFocus === "nav") {
           selectTab(selectedIndex);
         }
@@ -2131,8 +2132,8 @@
       }
     }
 
-    // Poll gamepad input - DISABLED: Using d-pad simulation system instead
-    // setInterval(handleGamepadInput, 100);
+    // Poll gamepad input
+    setInterval(handleGamepadInput, 100);
 
     // Settings system - control cards with single and stacked items
     let settings = [];
