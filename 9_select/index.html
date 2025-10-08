@@ -1935,39 +1935,78 @@
 
       console.log('🎮 Gamepad detected:', gp.id, 'axes:', gp.axes[0], gp.axes[1]);
 
+      // Log all pressed buttons to identify d-pad mapping
+      const pressedButtons = [];
+      for (let i = 0; i < gp.buttons.length; i++) {
+        if (gp.buttons[i] && gp.buttons[i].pressed) {
+          pressedButtons.push(i);
+        }
+      }
+      if (pressedButtons.length > 0) {
+        console.log('🎮 BUTTONS PRESSED:', pressedButtons.join(', '));
+      }
+
       // Deadzone for analog sticks
       const deadzone = 0.5;
       let axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
       let axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
 
-      // Check D-pad buttons (common indices for d-pad: 12=up, 13=down, 14=left, 15=right)
-      // Also check alternative indices: 1=up, 3=down, 0=left, 2=right (some controllers)
-      if (gp.buttons[14] && gp.buttons[14].pressed) {
-        console.log('🎮 D-pad left pressed');
-        axisX = -1;
-      } else if (gp.buttons[15] && gp.buttons[15].pressed) {
-        console.log('🎮 D-pad right pressed');
-        axisX = 1;
-      } else if (gp.buttons[0] && gp.buttons[0].pressed) {
-        console.log('🎮 D-pad left pressed (alt)');
-        axisX = -1;
-      } else if (gp.buttons[2] && gp.buttons[2].pressed) {
-        console.log('🎮 D-pad right pressed (alt)');
-        axisX = 1;
+      // Check D-pad buttons - comprehensive detection for ROG Ally
+      // Test all possible button combinations
+      let dpadPressed = false;
+      
+      // Check for left movement (test multiple button indices)
+      for (let i = 0; i < 20; i++) {
+        if (gp.buttons[i] && gp.buttons[i].pressed) {
+          if (i === 14 || i === 0) { // Common left indices
+            console.log('🎮 D-pad LEFT detected on button', i);
+            axisX = -1;
+            dpadPressed = true;
+            break;
+          }
+        }
       }
-
-      if (gp.buttons[12] && gp.buttons[12].pressed) {
-        console.log('🎮 D-pad up pressed');
-        axisY = -1;
-      } else if (gp.buttons[13] && gp.buttons[13].pressed) {
-        console.log('🎮 D-pad down pressed');
-        axisY = 1;
-      } else if (gp.buttons[1] && gp.buttons[1].pressed) {
-        console.log('🎮 D-pad up pressed (alt)');
-        axisY = -1;
-      } else if (gp.buttons[3] && gp.buttons[3].pressed) {
-        console.log('🎮 D-pad down pressed (alt)');
-        axisY = 1;
+      
+      // Check for right movement if no left detected
+      if (!dpadPressed) {
+        for (let i = 0; i < 20; i++) {
+          if (gp.buttons[i] && gp.buttons[i].pressed) {
+            if (i === 15 || i === 2) { // Common right indices
+              console.log('🎮 D-pad RIGHT detected on button', i);
+              axisX = 1;
+              dpadPressed = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Check for up movement if no horizontal detected
+      if (!dpadPressed) {
+        for (let i = 0; i < 20; i++) {
+          if (gp.buttons[i] && gp.buttons[i].pressed) {
+            if (i === 12 || i === 1) { // Common up indices
+              console.log('🎮 D-pad UP detected on button', i);
+              axisY = -1;
+              dpadPressed = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Check for down movement if no other detected
+      if (!dpadPressed) {
+        for (let i = 0; i < 20; i++) {
+          if (gp.buttons[i] && gp.buttons[i].pressed) {
+            if (i === 13 || i === 3) { // Common down indices
+              console.log('🎮 D-pad DOWN detected on button', i);
+              axisY = 1;
+              dpadPressed = true;
+              break;
+            }
+          }
+        }
       }
 
       // Prevent rapid-fire input with debouncing
