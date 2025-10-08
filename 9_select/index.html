@@ -1922,38 +1922,85 @@
     
     function handleGamepadInput() {
       const gamepads = navigator.getGamepads();
-      if (!gamepads) return;
+      if (!gamepads) {
+        console.log('🎮 No gamepads detected');
+        return;
+      }
 
       const gp = gamepads[0]; // Assume single controller for simplicity
-      if (!gp) return;
+      if (!gp) {
+        console.log('🎮 No gamepad connected');
+        return;
+      }
+
+      console.log('🎮 Gamepad detected:', gp.id, 'axes:', gp.axes[0], gp.axes[1]);
 
       // Deadzone for analog sticks
       const deadzone = 0.5;
-      const axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
-      const axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
+      let axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
+      let axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
+
+      // Check D-pad buttons (common indices for d-pad: 12=up, 13=down, 14=left, 15=right)
+      // Also check alternative indices: 1=up, 3=down, 0=left, 2=right (some controllers)
+      if (gp.buttons[14] && gp.buttons[14].pressed) {
+        console.log('🎮 D-pad left pressed');
+        axisX = -1;
+      } else if (gp.buttons[15] && gp.buttons[15].pressed) {
+        console.log('🎮 D-pad right pressed');
+        axisX = 1;
+      } else if (gp.buttons[0] && gp.buttons[0].pressed) {
+        console.log('🎮 D-pad left pressed (alt)');
+        axisX = -1;
+      } else if (gp.buttons[2] && gp.buttons[2].pressed) {
+        console.log('🎮 D-pad right pressed (alt)');
+        axisX = 1;
+      }
+
+      if (gp.buttons[12] && gp.buttons[12].pressed) {
+        console.log('🎮 D-pad up pressed');
+        axisY = -1;
+      } else if (gp.buttons[13] && gp.buttons[13].pressed) {
+        console.log('🎮 D-pad down pressed');
+        axisY = 1;
+      } else if (gp.buttons[1] && gp.buttons[1].pressed) {
+        console.log('🎮 D-pad up pressed (alt)');
+        axisY = -1;
+      } else if (gp.buttons[3] && gp.buttons[3].pressed) {
+        console.log('🎮 D-pad down pressed (alt)');
+        axisY = 1;
+      }
 
       // Prevent rapid-fire input by checking if input changed
       const inputChanged = Math.abs(axisX - lastGamepadInput.axes[0]) > 0.1 || 
                           Math.abs(axisY - lastGamepadInput.axes[1]) > 0.1;
 
       if (inputChanged) {
+        console.log('🎮 Input changed, axisX:', axisX, 'axisY:', axisY, 'navigationFocus:', navigationFocus);
         if (navigationFocus === "nav") {
           // Navigation bar focused - left/right controls tabs, down enters carousel
-          if (axisX > deadzone) {
+          if (axisX > 0) {
+            console.log('🎮 Gamepad: Moving right in nav, selectedIndex:', selectedIndex);
             selectedIndex = (selectedIndex + 1) % tabs.length;
             renderNav();
             // Play navigation sound for gamepad
             if (window.playNavSound) {
+              console.log('🔊 Playing nav sound (gamepad right)');
               window.playNavSound();
+            } else {
+              console.log('❌ playNavSound not available');
             }
-          } else if (axisX < -deadzone) {
+          } else if (axisX < 0) {
+            console.log('🎮 Gamepad: Moving left in nav, selectedIndex:', selectedIndex);
             selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
             renderNav();
             // Play navigation sound for gamepad
             if (window.playNavSound) {
+              console.log('🔊 Playing nav sound (gamepad left)');
               window.playNavSound();
+            } else {
+              console.log('❌ playNavSound not available');
             }
-          } else if (axisY > deadzone && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings" || tabs[selectedIndex] === "copilot")) {
+          } else if (axisY > 0 && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings" || tabs[selectedIndex] === "copilot")) {
             // Move focus down to carousel
             navigationFocus = "carousel";
             updateFocusVisuals();
@@ -1964,7 +2011,7 @@
           }
         } else if (navigationFocus === "carousel") {
           // Carousel focused - left/right controls items, up returns to nav
-          if (axisX > deadzone) {
+          if (axisX > 0) {
             if (tabs[selectedIndex] === "games") {
               navigateGamesCarousel('right');
             } else if (tabs[selectedIndex] === "apps") {
@@ -1984,7 +2031,7 @@
             if (window.playCarouselNavSound) {
               window.playCarouselNavSound();
             }
-          } else if (axisX < -deadzone) {
+          } else if (axisX < 0) {
             if (tabs[selectedIndex] === "games") {
               navigateGamesCarousel('left');
             } else if (tabs[selectedIndex] === "apps") {
@@ -2004,7 +2051,7 @@
             if (window.playCarouselNavSound) {
               window.playCarouselNavSound();
             }
-          } else if (axisY < -deadzone) {
+          } else if (axisY < 0) {
             // Move focus back up to navigation, or navigate stack items for settings/copilot
             if (tabs[selectedIndex] === "settings") {
               // Try to navigate within stack first, if it returns false then go to nav bar
@@ -2034,7 +2081,7 @@
                 window.playNavSound();
               }
             }
-          } else if (axisY > deadzone) {
+          } else if (axisY > 0) {
             // Navigate stack items for settings/copilot, but don't cycle at bottom
             if (tabs[selectedIndex] === "settings") {
               navigateStackItems('down'); // If it returns false, just stay at bottom item
