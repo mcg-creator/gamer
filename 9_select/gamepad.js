@@ -39,6 +39,14 @@ class GamepadManager {
         this.currentState = new Map();
         this.previousState = new Map();
 
+        // D-pad to arrow key mapping
+        this.dpadToKeyMap = {
+            'UP': 'ArrowUp',
+            'DOWN': 'ArrowDown',
+            'LEFT': 'ArrowLeft',
+            'RIGHT': 'ArrowRight'
+        };
+
         // Listen for gamepad connection/disconnection
         window.addEventListener('gamepadconnected', (e) => {
             console.log('🎮 Gamepad connected:', e.gamepad.id);
@@ -58,6 +66,40 @@ class GamepadManager {
         for (const gamepad of gamepads) {
             if (gamepad) {
                 this.currentState.set(gamepad.index, gamepad);
+            }
+        }
+
+        // Handle d-pad to arrow key mapping
+        this.handleDpadToArrowKeys();
+    }
+
+    // Simulate keyboard events for d-pad inputs
+    simulateKeyboardEvent(keyCode, eventType) {
+        const event = new KeyboardEvent(eventType, {
+            key: keyCode,
+            code: keyCode,
+            bubbles: true,
+            cancelable: true
+        });
+        
+        document.dispatchEvent(event);
+    }
+
+    // Handle d-pad to arrow key mapping
+    handleDpadToArrowKeys(gamepadIndex = 0) {
+        // Check each d-pad direction
+        for (const [dpadButton, arrowKey] of Object.entries(this.dpadToKeyMap)) {
+            const justPressedNow = this.justPressed(dpadButton, gamepadIndex);
+            const justReleasedNow = this.justReleased(dpadButton, gamepadIndex);
+
+            if (justPressedNow) {
+                console.log(`🎮 D-pad ${dpadButton} pressed, simulating ${arrowKey} keydown`);
+                this.simulateKeyboardEvent(arrowKey, 'keydown');
+            }
+
+            if (justReleasedNow) {
+                console.log(`🎮 D-pad ${dpadButton} released, simulating ${arrowKey} keyup`);
+                this.simulateKeyboardEvent(arrowKey, 'keyup');
             }
         }
     }

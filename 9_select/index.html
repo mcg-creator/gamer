@@ -8,6 +8,23 @@
 </head>
 <body>
   <div id="app">
+    <!-- D-pad Test Indicator -->
+    <div id="dpad-test" style="position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; font-family: monospace; z-index: 1000;">
+      <h3>D-pad Test</h3>
+      <div id="arrow-indicators">
+        <div style="text-align: center;">
+          <div id="up-indicator" style="padding: 5px; margin: 2px; background: #333; border-radius: 3px;">↑ UP</div>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <div id="left-indicator" style="padding: 5px; margin: 2px; background: #333; border-radius: 3px;">← LEFT</div>
+          <div id="right-indicator" style="padding: 5px; margin: 2px; background: #333; border-radius: 3px;">RIGHT →</div>
+        </div>
+        <div style="text-align: center;">
+          <div id="down-indicator" style="padding: 5px; margin: 2px; background: #333; border-radius: 3px;">↓ DOWN</div>
+        </div>
+      </div>
+    </div>
+    
     <div id="game-container">
       <div id="windows-shell">
         <div id="app-container">
@@ -2114,8 +2131,8 @@
       }
     }
 
-    // Poll gamepad input
-    setInterval(handleGamepadInput, 100);
+    // Poll gamepad input - DISABLED: Using d-pad simulation system instead
+    // setInterval(handleGamepadInput, 100);
 
     // Settings system - control cards with single and stacked items
     let settings = [];
