@@ -14,6 +14,267 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Lockscreen Styles */
+.lockscreen-container {
+    width: 1280px;
+    height: 720px;
+    background: url('assets/lockscreen/tenarcher_bg.png') no-repeat center center;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: background-image 0.5s ease-in-out;
+}
+
+.lockscreen-container.ghost-focused {
+    background: url('assets/lockscreen/ghost_bg.png') no-repeat center center;
+    background-size: cover;
+}
+
+.lockscreen-background {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.user-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: 104px; /* Moved down by 50px from 54px */
+    left: 50%;
+    transform: translateX(-50%);
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.user-profile.ghost-focused {
+    transform: translateX(-300px); /* Move left to center ghost avatar perfectly */
+}
+
+.avatar-container {
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.ghost-avatar-container {
+    position: absolute;
+    top: 0px; /* Both avatars are same size now, so no vertical offset needed */
+    left: 200px; /* Position to the right of the main avatar - 200px distance */
+}
+
+.ghost-avatar {
+    width: 210px;
+    height: 210px;
+    border-radius: 50%;
+    transition: opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.0);
+}
+
+.ghost-avatar.focused {
+    transform: scale(1.5); /* Same scale as TenArcher since both are now 210px */
+}
+
+/* Bottom-align inactive ghost avatar when TenArcher is focused */
+.user-profile:not(.ghost-focused) .ghost-avatar:not(.focused) {
+    transform: scale(1.0) translateY(27.5px); /* Move down to bottom-align with focused avatar (moved up another 5px) */
+}
+
+.username-container {
+    position: absolute;
+    top: 314px; /* Moved down by 40px from 274px */
+    left: 50%; /* Center relative to lockscreen container */
+    transform: translateX(-50%); /* Center the element itself */
+    z-index: 10; /* Ensure it stays above other elements */
+}
+
+.avatar {
+    width: 210px;
+    height: 210px;
+    border-radius: 50%;
+    transition: opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.0);
+}
+
+.avatar.focused {
+    transform: scale(1.5);
+}
+
+/* Bottom-align inactive avatar when ghost is focused */
+.user-profile.ghost-focused .avatar:not(.focused) {
+    transform: scale(1.0) translateY(27.5px); /* Move down to bottom-align with focused avatar (moved up another 5px) */
+}
+
+.user-profile.ghost-focused .avatar {
+    transform: scale(1.0); /* Both avatars are same size now, so inactive state is normal scale */
+}
+
+.username {
+    height: 32px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transition: transform 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53), opacity 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform-origin: center;
+}
+
+/* Username positioning states */
+.username.tenarcher-active {
+    transform: translateX(-50%);
+    opacity: 1;
+}
+
+.username.tenarcher-inactive {
+    transform: translateX(calc(-50% - 60px));
+    opacity: 0;
+}
+
+.username.ghost-active {
+    transform: translateX(-50%);
+    opacity: 1;
+}
+
+.username.ghost-inactive {
+    transform: translateX(calc(-50% + 60px));
+    opacity: 0;
+}
+
+.pin-section {
+    position: absolute;
+    top: calc(50% + 75px); /* Moved down by another 25px from +50px */
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.pin-dots {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.pin-dot {
+    width: auto;
+    height: auto;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.pin-dot.focused {
+    transform: scale(1.2);
+}
+
+.game-tiles-container {
+    position: absolute;
+    bottom: 54px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+}
+
+.game-tiles {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px; /* Default smaller gap */
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: transform 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53), opacity 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+/* Game tiles positioning states */
+.game-tiles.tenarcher-active {
+    transform: translateX(-50%);
+    opacity: 1;
+}
+
+.game-tiles.tenarcher-inactive {
+    transform: translateX(calc(-50% - 60px));
+    opacity: 0;
+}
+
+.game-tiles.ghost-active {
+    transform: translateX(-50%);
+    opacity: 1;
+}
+
+.game-tiles.ghost-inactive {
+    transform: translateX(calc(-50% + 60px));
+    opacity: 0;
+}
+
+/* Center ghost footer by hiding empty tiles */
+.lockscreen-container.ghost-focused .game-tile[data-game="3"],
+.lockscreen-container.ghost-focused .game-tile[data-game="4"],
+.lockscreen-container.ghost-focused .game-tile[data-game="5"] {
+    display: none;
+}
+
+.game-tile[data-game="0"] {
+    margin-right: 32px; /* Extra margin after the first game tile */
+}
+
+.game-tile[data-game="4"] {
+    margin-right: 32px; /* Extra margin after the +3 tile */
+}
+
+.game-tile {
+    width: 64px;
+    height: 64px;
+    border-radius: 15px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.game-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.game-tile.focused {
+    transform: scale(1.3);
+}
+
+/* plus3.png tile has no focus state, so exclude it from scaling */
+.game-tile.focused .game-image[src*="plus3.png"] {
+    transform: scale(1);
+}
+
+.more-games {
+    /* Remove background for clean look */
+}
+
+.download-tile {
+    /* Remove background for clean look */
+}
+
+/* Hide main app initially */
+#app {
+    display: none;
+    width: 1280px;
+    height: 720px;
 }
 
 #app {
@@ -585,7 +846,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .friend-card.far-left {
-    transform: translateX(-652px) scale(0.8);
+    transform: translateX(-632px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -593,7 +854,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .friend-card.far-right {
-    transform: translateX(652px) scale(0.8);
+    transform: translateX(632px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -609,19 +870,19 @@ main::-webkit-scrollbar-thumb:hover {
 
 /* When friends carousel is active, push side images further out to maintain spacing */
 .friends-carousel-wrapper:not(.carousel-inactive) .friend-card.left {
-    transform: translateX(-376px) scale(1.0);
+    transform: translateX(-365px) scale(1.0);
 }
 
 .friends-carousel-wrapper:not(.carousel-inactive) .friend-card.right {
-    transform: translateX(376px) scale(1.0);
+    transform: translateX(365px) scale(1.0);
 }
 
 .friends-carousel-wrapper:not(.carousel-inactive) .friend-card.far-left {
-    transform: translateX(-696px) scale(0.8);
+    transform: translateX(-670px) scale(0.8);
 }
 
 .friends-carousel-wrapper:not(.carousel-inactive) .friend-card.far-right {
-    transform: translateX(696px) scale(0.8);
+    transform: translateX(670px) scale(0.8);
 }
 
 /* Notify card positioning (same as friend cards) */
@@ -648,7 +909,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .notify-card.far-left {
-    transform: translateX(-652px) scale(0.8) !important;
+    transform: translateX(-632px) scale(0.8) !important;
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -656,7 +917,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .notify-card.far-right {
-    transform: translateX(652px) scale(0.8) !important;
+    transform: translateX(632px) scale(0.8) !important;
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -672,19 +933,19 @@ main::-webkit-scrollbar-thumb:hover {
 
 /* When notify carousel is active, push side images further out to maintain spacing */
 .notify-carousel-wrapper:not(.carousel-inactive) .notify-card.left {
-    transform: translateX(-376px) scale(1.0) !important;
+    transform: translateX(-365px) scale(1.0) !important;
 }
 
 .notify-carousel-wrapper:not(.carousel-inactive) .notify-card.right {
-    transform: translateX(376px) scale(1.0) !important;
+    transform: translateX(365px) scale(1.0) !important;
 }
 
 .notify-carousel-wrapper:not(.carousel-inactive) .notify-card.far-left {
-    transform: translateX(-696px) scale(0.8) !important;
+    transform: translateX(-670px) scale(0.8) !important;
 }
 
 .notify-carousel-wrapper:not(.carousel-inactive) .notify-card.far-right {
-    transform: translateX(696px) scale(0.8) !important;
+    transform: translateX(670px) scale(0.8) !important;
 }
 
 .game-card.center {
@@ -1020,7 +1281,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .settings-card.far-left, .settings-stack-card.far-left {
-    transform: translateX(-652px) scale(0.8);
+    transform: translateX(-632px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -1029,7 +1290,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .settings-card.far-right, .settings-stack-card.far-right {
-    transform: translateX(652px) scale(0.8);
+    transform: translateX(632px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -1064,22 +1325,22 @@ main::-webkit-scrollbar-thumb:hover {
 /* When carousel is active, push side images further out to maintain spacing */
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-card.left,
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.left {
-    transform: translateX(-376px) scale(1.0);
+    transform: translateX(-365px) scale(1.0);
 }
 
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-card.right,
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.right {
-    transform: translateX(376px) scale(1.0);
+    transform: translateX(365px) scale(1.0);
 }
 
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-card.far-left,
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.far-left {
-    transform: translateX(-696px) scale(0.8);
+    transform: translateX(-670px) scale(0.8);
 }
 
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-card.far-right,
 .settings-carousel-wrapper:not(.carousel-inactive) .settings-stack-card.far-right {
-    transform: translateX(696px) scale(0.8);
+    transform: translateX(670px) scale(0.8);
 }
 
 .settings-image {
@@ -1221,7 +1482,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .copilot-card.far-left, .copilot-stack-card.far-left {
-    transform: translateX(-652px) scale(0.8);
+    transform: translateX(-632px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -1230,7 +1491,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .copilot-card.far-right, .copilot-stack-card.far-right {
-    transform: translateX(652px) scale(0.8);
+    transform: translateX(632px) scale(0.8);
     z-index: 1;
     filter: brightness(0.7);
     opacity: 0.7;
@@ -1265,22 +1526,22 @@ main::-webkit-scrollbar-thumb:hover {
 /* When carousel is active, push side images further out to maintain spacing */
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.left,
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.left {
-    transform: translateX(-376px) scale(1.0);
+    transform: translateX(-365px) scale(1.0);
 }
 
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.right,
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.right {
-    transform: translateX(376px) scale(1.0);
+    transform: translateX(365px) scale(1.0);
 }
 
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.far-left,
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.far-left {
-    transform: translateX(-696px) scale(0.8);
+    transform: translateX(-670px) scale(0.8);
 }
 
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-card.far-right,
 .copilot-carousel-wrapper:not(.carousel-inactive) .copilot-stack-card.far-right {
-    transform: translateX(696px) scale(0.8);
+    transform: translateX(670px) scale(0.8);
 }
 
 .copilot-image {
@@ -1299,4 +1560,83 @@ main::-webkit-scrollbar-thumb:hover {
 .copilot-card.center,
 .copilot-stack-card.center {
     box-shadow: none;
+}
+
+/* Sliding animations for lockscreen transitions */
+@keyframes slide-out-left {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-40px);
+        opacity: 0;
+    }
+}
+
+@keyframes slide-in-from-right {
+    from {
+        transform: translateX(40px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-out-right {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(40px);
+        opacity: 0;
+    }
+}
+
+@keyframes slide-in-from-left {
+    from {
+        transform: translateX(-40px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Animation classes for username - synchronized with avatar timing */
+.username.slide-out-left {
+    animation: slide-out-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.username.slide-in-from-right {
+    animation: slide-in-from-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.username.slide-out-right {
+    animation: slide-out-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.username.slide-in-from-left {
+    animation: slide-in-from-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+/* Animation classes for game tiles container - synchronized with avatar timing */
+.game-tiles.slide-out-left {
+    animation: slide-out-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.game-tiles.slide-in-from-right {
+    animation: slide-in-from-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.game-tiles.slide-out-right {
+    animation: slide-out-right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.game-tiles.slide-in-from-left {
+    animation: slide-in-from-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
 }

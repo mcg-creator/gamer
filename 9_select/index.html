@@ -5,9 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ROG Ally Demo</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="lockscreen.js"></script>
 </head>
 <body>
-  <div id="app">
+  <!-- Lockscreen Interface -->
+  <div id="lockscreen" class="lockscreen-container">
+    <div class="lockscreen-background">
+      <!-- User Profile Section -->
+      <div class="user-profile">
+        <div class="avatar-container">
+          <img id="avatar-image" src="assets/lockscreen/tenarcher_focus.png" alt="User Avatar" class="avatar">
+        </div>
+        <div class="ghost-avatar-container">
+          <img id="ghost-avatar-image" src="assets/lockscreen/ghost.png" alt="Ghost Avatar" class="ghost-avatar">
+        </div>
+      </div>
+      
+      <!-- Username (fixed position) -->
+      <div class="username-container">
+        <img id="tenarcher-username" src="assets/lockscreen/tenarcher_name.png" alt="TenArcher" class="username tenarcher-active">
+        <img id="ghost-username" src="assets/lockscreen/ghost_name.png" alt="Ghost" class="username ghost-inactive">
+      </div>
+      
+      <!-- PIN Input Section -->
+      <div class="pin-section">
+        <div class="pin-dots">
+          <img class="pin-dot" data-index="0" src="assets/lockscreen/pin.png" alt="PIN Dot 1">
+          <img class="pin-dot" data-index="1" src="assets/lockscreen/pin.png" alt="PIN Dot 2">
+          <img class="pin-dot" data-index="2" src="assets/lockscreen/pin.png" alt="PIN Dot 3">
+          <img class="pin-dot" data-index="3" src="assets/lockscreen/pin.png" alt="PIN Dot 4">
+        </div>
+      </div>
+      
+      <!-- Game Tiles Section -->
+      <div class="game-tiles-container">
+        <div id="tenarcher-games" class="game-tiles tenarcher-active">
+          <div class="game-tile" data-game="0">
+            <img src="assets/lockscreen/game.png" alt="Game" class="game-image">
+          </div>
+          <div class="game-tile" data-game="1">
+            <img src="assets/lockscreen/avatar1.png" alt="Avatar 1" class="game-image">
+          </div>
+          <div class="game-tile" data-game="2">
+            <img src="assets/lockscreen/avatar2.png" alt="Avatar 2" class="game-image">
+          </div>
+          <div class="game-tile" data-game="3">
+            <img src="assets/lockscreen/avatar3.png" alt="Avatar 3" class="game-image">
+          </div>
+          <div class="game-tile more-games" data-game="4">
+            <img src="assets/lockscreen/plus3.png" alt="+3" class="game-image">
+          </div>
+          <div class="game-tile download-tile" data-game="5">
+            <img src="assets/lockscreen/update.png" alt="Download" class="game-image">
+          </div>
+        </div>
+        <div id="ghost-games" class="game-tiles ghost-inactive">
+          <div class="game-tile" data-game="0">
+            <img src="assets/lockscreen/game2.png" alt="Game 2" class="game-image">
+          </div>
+          <div class="game-tile" data-game="1">
+            <img src="assets/lockscreen/avatar4.png" alt="Avatar 4" class="game-image">
+          </div>
+          <div class="game-tile" data-game="2">
+            <img src="assets/lockscreen/avatar5.png" alt="Avatar 5" class="game-image">
+          </div>
+          <div class="game-tile" data-game="3">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
+          </div>
+          <div class="game-tile more-games" data-game="4">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
+          </div>
+          <div class="game-tile download-tile" data-game="5">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" style="display: none;">
     <div id="game-container">
       <div id="windows-shell">
         <div id="app-container">
@@ -95,6 +171,122 @@
   </div>
   
   <script>
+    // Game audio management system
+    let currentGameAudio = null;
+    let gameAudioFadeInterval = null;
+    const gameAudioVolume = 0.15; // 15% volume for background music (reduced from 30%)
+    const audioFadeDuration = 800; // 800ms fade duration for smoother crossfade
+    
+    // Preload and manage game audio tracks
+    const gameAudioCache = new Map();
+    
+    function preloadGameAudio(gameId) {
+      if (!gameAudioCache.has(gameId)) {
+        const audio = new Audio();
+        audio.src = `assets/sounds/games/${gameId}.mp3`;
+        audio.loop = true;
+        audio.volume = 0;
+        audio.preload = 'auto';
+        
+        // Handle loading errors gracefully
+        audio.onerror = () => {
+          console.log(`No audio file found for game: ${gameId}`);
+        };
+        
+        gameAudioCache.set(gameId, audio);
+      }
+      return gameAudioCache.get(gameId);
+    }
+    
+    function fadeOutAudio(audio, callback) {
+      if (!audio || audio.paused) {
+        if (callback) callback();
+        return;
+      }
+      
+      const startVolume = audio.volume;
+      const fadeStep = startVolume / (audioFadeDuration / 50); // 50ms steps
+      
+      const fadeInterval = setInterval(() => {
+        if (audio.volume > fadeStep) {
+          audio.volume -= fadeStep;
+        } else {
+          audio.volume = 0;
+          audio.pause();
+          clearInterval(fadeInterval);
+          if (callback) callback();
+        }
+      }, 50);
+    }
+    
+    function fadeInAudio(audio, targetVolume = gameAudioVolume) {
+      if (!audio) return;
+      
+      audio.volume = 0;
+      audio.play().catch(error => {
+        console.log('Game audio play failed:', error);
+      });
+      
+      const fadeStep = targetVolume / (audioFadeDuration / 50); // 50ms steps
+      
+      const fadeInterval = setInterval(() => {
+        if (audio.volume < targetVolume - fadeStep) {
+          audio.volume += fadeStep;
+        } else {
+          audio.volume = targetVolume;
+          clearInterval(fadeInterval);
+        }
+      }, 50);
+    }
+    
+    function playGameAudio(gameId) {
+      // Only play audio when games carousel is focused
+      if (tabs[selectedIndex] !== "games" || navigationFocus !== "carousel") {
+        return;
+      }
+      
+      const newAudio = preloadGameAudio(gameId);
+      
+      // If this is the same audio that's already playing, do nothing
+      if (currentGameAudio === newAudio && !currentGameAudio.paused) {
+        return;
+      }
+      
+      // Store reference to old audio for crossfading
+      const oldAudio = currentGameAudio;
+      
+      // Set new current audio
+      currentGameAudio = newAudio;
+      
+      // Start crossfade if we have both old and new audio
+      if (oldAudio && !oldAudio.paused && currentGameAudio && currentGameAudio.readyState >= 2) {
+        // Start fading in new audio immediately
+        fadeInAudio(currentGameAudio);
+        
+        // Start fading out old audio simultaneously
+        fadeOutAudio(oldAudio);
+        
+        console.log(`Crossfading from ${oldAudio.src.split('/').pop()} to ${currentGameAudio.src.split('/').pop()}`);
+      } else {
+        // No crossfade needed - just play new audio
+        if (oldAudio) {
+          fadeOutAudio(oldAudio);
+        }
+        
+        if (currentGameAudio && currentGameAudio.readyState >= 2) {
+          fadeInAudio(currentGameAudio);
+        }
+      }
+    }
+    
+    function stopGameAudio() {
+      if (currentGameAudio) {
+        fadeOutAudio(currentGameAudio, () => {
+          currentGameAudio = null;
+        });
+      }
+    }
+
     // Dynamic game detection system
     let games = [];
     let currentGameIndex = 0;
@@ -293,6 +485,12 @@
         ];
       }
       
+      // Preload audio files for all games
+      console.log('🎵 Preloading game audio files...');
+      games.forEach(game => {
+        preloadGameAudio(game.id);
+      });
+      
       createGameCards();
       updateGamesCarousel();
     }
@@ -443,7 +641,7 @@
       const detectedFriends = [];
       
       const potentialFriends = [
-        'friend1', 'friend2', 'friend6', 'friend7', 'friend8', 'friend5', 'friend4', 'friend3',
+        'friend2', 'friend1', 'friend6', 'friend7', 'friend8', 'friend5', 'friend4', 'friend3',
         // Add more potential friend names here as you add them
         'friend9', 'friend10'
       ];
@@ -1237,8 +1435,12 @@
             if (gameImage && gameId) {
               if (navigationFocus === "carousel") {
                 gameImage.src = `assets/games/${gameId}_focus.png`;
+                // Play the game's background audio when focused
+                playGameAudio(gameId);
               } else {
                 gameImage.src = `assets/games/${gameId}.png`;
+                // Stop audio when not focused (nav bar focused)
+                stopGameAudio();
               }
             }
           } else if (relativeIndex === totalGames - 1) {
@@ -1364,6 +1566,11 @@
 
     function updateContent() {
       const currentTab = tabs[selectedIndex];
+      
+      // Stop game audio when switching away from games tab
+      if (currentTab !== "games") {
+        stopGameAudio();
+      }
       
       // Fade out all carousels and default content first
       const fadeOutDuration = 200; // milliseconds
@@ -1703,6 +1910,11 @@
       if (navigationFocus === "nav") {
         // Navigation bar focused - keep both at full opacity but make carousel images uniform
         nav.style.opacity = "1";
+        
+        // Stop game audio when focus leaves games carousel
+        if (currentTab === "games") {
+          stopGameAudio();
+        }
         
         // Add inactive class to the appropriate carousel wrapper
         if (currentTab === "games" && gamesCarouselWrapper) {

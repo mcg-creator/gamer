@@ -111,6 +111,58 @@ function updateActiveButtons() { }
 
 // Handle input events
 function handleInput() {
+    // Check if lockscreen is active
+    const lockscreen = document.getElementById('lockscreen');
+    const isLockscreenActive = lockscreen && lockscreen.style.display !== 'none';
+    
+    if (isLockscreenActive && window.lockscreenManager) {
+        // Handle lockscreen input through gamepad
+        handleLockscreenGamepadInput();
+    } else {
+        // Handle main app input
+        handleMainAppInput();
+    }
+}
+
+function handleLockscreenGamepadInput() {
+    // Map gamepad buttons to lockscreen actions
+    const dpadUp = inputManager.justPressed('DPadUp');
+    const dpadDown = inputManager.justPressed('DPadDown');
+    const dpadLeft = inputManager.justPressed('DPadLeft');
+    const dpadRight = inputManager.justPressed('DPadRight');
+    const buttonA = inputManager.justPressed('A');
+    const buttonB = inputManager.justPressed('B');
+    
+    if (dpadUp) {
+        window.lockscreenManager.navigateUp();
+    } else if (dpadDown) {
+        window.lockscreenManager.navigateDown();
+    } else if (dpadLeft) {
+        window.lockscreenManager.navigateLeft();
+    } else if (dpadRight) {
+        window.lockscreenManager.navigateRight();
+    } else if (buttonA) {
+        window.lockscreenManager.handleSelect();
+    } else if (buttonB) {
+        window.lockscreenManager.handleBack();
+    }
+    
+    // Handle number input via gamepad for PIN
+    // Map face buttons to numbers for PIN entry
+    if (window.lockscreenManager.currentFocus === 'pin') {
+        if (inputManager.justPressed('A')) {
+            window.lockscreenManager.addPinDigit('1');
+        } else if (inputManager.justPressed('B')) {
+            window.lockscreenManager.addPinDigit('2');
+        } else if (inputManager.justPressed('X')) {
+            window.lockscreenManager.addPinDigit('3');
+        } else if (inputManager.justPressed('Y')) {
+            window.lockscreenManager.addPinDigit('4');
+        }
+    }
+}
+
+function handleMainAppInput() {
     const appContainer = document.getElementById('app-container');
     
     // Check for keyboard key 'A' press
