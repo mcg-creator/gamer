@@ -24,16 +24,18 @@ function init() {
     navAudio = new Audio('assets/sounds/nav.mp3');
     navAudio.preload = 'auto';
     navAudio.volume = 0.5; // Set volume to 50%
+    window.navAudio = navAudio; // Make available globally for lockscreen
     
     // Load carousel sound
-    carouselAudio = new Audio('assets/sounds/carousel2.mp3');
+    carouselAudio = new Audio('assets/sounds/carousel2.MP3');
     carouselAudio.preload = 'auto';
     carouselAudio.volume = 0.5; // Set volume to 50%
     
-    // Load carousel navigation sound
-    carouselNavAudio = new Audio('assets/sounds/carousel.mp3');
+    // Load carousel navigation sound (used by lockscreen for PIN entry)
+    carouselNavAudio = new Audio('assets/sounds/carousel.MP3');
     carouselNavAudio.preload = 'auto';
     carouselNavAudio.volume = 0.5; // Set volume to 50%
+    window.carouselAudio = carouselNavAudio; // Make available globally for lockscreen
     
     // Setup arrow key event listeners to test d-pad mapping
     setupArrowKeyListeners();

@@ -126,31 +126,28 @@ body {
 .username {
     height: 32px;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-    transition: transform 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53), opacity 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    transition: opacity 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
     position: absolute;
     top: 0;
     left: 50%;
+    transform: translateX(-50%);
     transform-origin: center;
 }
 
-/* Username positioning states */
+/* Username cross-fade states */
 .username.tenarcher-active {
-    transform: translateX(-50%);
     opacity: 1;
 }
 
 .username.tenarcher-inactive {
-    transform: translateX(calc(-50% - 60px));
     opacity: 0;
 }
 
 .username.ghost-active {
-    transform: translateX(-50%);
     opacity: 1;
 }
 
 .username.ghost-inactive {
-    transform: translateX(calc(-50% + 60px));
     opacity: 0;
 }
 
@@ -183,6 +180,11 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
+    height: 64px; /* Fixed height to prevent layout shifts */
+    box-sizing: border-box;
+    /* Prevent any movement during transitions */
+    margin: 0;
+    padding: 0;
 }
 
 .game-tiles {
@@ -192,45 +194,66 @@ body {
     gap: 16px; /* Default smaller gap */
     position: absolute;
     bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    transition: transform 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53), opacity 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    left: 0;
+    right: 0;
+    /* Use left/right 0 instead of left 50% + transform for more stable positioning */
+    transition: opacity 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    width: 100%;
+    height: 64px; /* Fixed height */
+    box-sizing: border-box;
+    /* Force both footers to stay in exactly the same position */
+    margin: 0;
+    padding: 0;
+    /* Prevent any layout recalculation */
+    will-change: opacity;
 }
 
-/* Game tiles positioning states */
+/* Game tiles cross-fade states - both always centered */
 .game-tiles.tenarcher-active {
-    transform: translateX(-50%);
     opacity: 1;
 }
 
 .game-tiles.tenarcher-inactive {
-    transform: translateX(calc(-50% - 60px));
     opacity: 0;
 }
 
 .game-tiles.ghost-active {
-    transform: translateX(-50%);
     opacity: 1;
 }
 
 .game-tiles.ghost-inactive {
-    transform: translateX(calc(-50% + 60px));
     opacity: 0;
 }
 
-/* Center ghost footer by hiding empty tiles */
-.lockscreen-container.ghost-focused .game-tile[data-game="3"],
-.lockscreen-container.ghost-focused .game-tile[data-game="4"],
-.lockscreen-container.ghost-focused .game-tile[data-game="5"] {
-    display: none;
+/* Ghost footer: Always hide empty tiles and remove them from layout */
+#ghost-games .game-tile[data-game="3"],
+#ghost-games .game-tile[data-game="4"], 
+#ghost-games .game-tile[data-game="5"] {
+    display: none !important;
+    /* Completely remove empty tiles from ghost footer layout - use !important to override any other rules */
 }
 
+/* Ensure both footers center their visible content properly */
+#tenarcher-games {
+    justify-content: center;
+}
+
+#ghost-games {
+    justify-content: center;
+}
+
+/* Margin adjustments - ensure centering is maintained */
 .game-tile[data-game="0"] {
     margin-right: 32px; /* Extra margin after the first game tile */
 }
 
 .game-tile[data-game="4"] {
     margin-right: 32px; /* Extra margin after the +3 tile */
+}
+
+/* Override any layout shifts during transitions */
+.game-tiles * {
+    box-sizing: border-box;
 }
 
 .game-tile {
@@ -244,6 +267,8 @@ body {
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
+    flex-shrink: 0; /* Prevent tiles from shrinking */
+    box-sizing: border-box;
 }
 
 .game-image {

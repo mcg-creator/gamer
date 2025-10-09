@@ -11,6 +11,9 @@ class LockscreenManager {
         this.lastUsernameIndex = 0; // Track previous username mode for crossfade detection
         this.lastGamepadInput = 0; // Throttle gamepad input
         
+        // Set global flag to indicate lockscreen is active
+        window.lockscreenActive = true;
+        
         this.lockscreenElement = document.getElementById('lockscreen');
         this.appElement = document.getElementById('app');
         
@@ -199,7 +202,9 @@ class LockscreenManager {
     }
     
     handleKeyDown(e) {
+        console.log('Lockscreen handling key:', e.key);
         e.preventDefault();
+        e.stopPropagation(); // Prevent event from bubbling to main app
         
         switch (e.key) {
             case 'ArrowUp':
@@ -243,7 +248,7 @@ class LockscreenManager {
             this.currentFocus = 'avatar';
         }
         this.updateFocus();
-        // No sound for vertical navigation between sections
+        this.playNavSound(); // nav.mp3 for vertical navigation
     }
     
     navigateDown() {
@@ -253,7 +258,7 @@ class LockscreenManager {
             this.currentFocus = 'games';
         }
         this.updateFocus();
-        // No sound for vertical navigation between sections
+        this.playNavSound(); // nav.mp3 for vertical navigation
     }
     
     navigateLeft() {
@@ -264,7 +269,7 @@ class LockscreenManager {
         } else if (this.currentFocus === 'pin') {
             this.previousPin();
             this.updateFocus();
-            // No sound for PIN left navigation
+            this.playNavSound(); // nav.mp3 for PIN left navigation
         } else if (this.currentFocus === 'avatar') {
             this.previousAvatar();
             this.updateFocus();
@@ -280,7 +285,7 @@ class LockscreenManager {
         } else if (this.currentFocus === 'pin') {
             this.nextPin();
             this.updateFocus();
-            this.playSelectSound(); // carousel.mp3 for PIN right navigation
+            this.playNavSound(); // nav.mp3 for PIN right navigation
         } else if (this.currentFocus === 'avatar') {
             this.nextAvatar();
             this.updateFocus();
@@ -295,8 +300,9 @@ class LockscreenManager {
             this.selectGame();
         } else if (this.currentFocus === 'pin') {
             this.addPinWithSpacebar();
+            this.playSelectSound(); // carousel.mp3 only for PIN spacebar/A button
         }
-        this.playSelectSound();
+        // No sound for avatar/games selection
     }
     
     handleBack() {
@@ -536,6 +542,9 @@ class LockscreenManager {
     
     unlockDevice() {
         console.log('🔓 Device unlocked!');
+        // Clear global lockscreen flag
+        window.lockscreenActive = false;
+        
         // Add unlock animation
         this.lockscreenElement.style.opacity = '0';
         this.lockscreenElement.style.transform = 'scale(1.1)';
@@ -611,17 +620,23 @@ class LockscreenManager {
     
     playNavSound() {
         // Play navigation sound if available
+        console.log('Attempting to play nav sound, window.navAudio:', !!window.navAudio);
         if (window.navAudio) {
             window.navAudio.currentTime = 0;
             window.navAudio.play().catch(e => console.log('Audio play failed:', e));
+        } else {
+            console.log('nav.mp3 audio not loaded');
         }
     }
     
     playSelectSound() {
         // Play selection sound if available
+        console.log('Attempting to play carousel sound, window.carouselAudio:', !!window.carouselAudio);
         if (window.carouselAudio) {
             window.carouselAudio.currentTime = 0;
             window.carouselAudio.play().catch(e => console.log('Audio play failed:', e));
+        } else {
+            console.log('carousel.mp3 audio not loaded');
         }
     }
 }

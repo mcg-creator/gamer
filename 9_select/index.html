@@ -240,6 +240,11 @@
     }
     
     function playGameAudio(gameId) {
+      // Don't play game audio if lockscreen is active
+      if (window.lockscreenActive) {
+        return;
+      }
+      
       // Only play audio when games carousel is focused
       if (tabs[selectedIndex] !== "games" || navigationFocus !== "carousel") {
         return;
@@ -280,6 +285,11 @@
     }
     
     function stopGameAudio() {
+      // Don't stop game audio operations if lockscreen is active
+      if (window.lockscreenActive) {
+        return;
+      }
+      
       if (currentGameAudio) {
         fadeOutAudio(currentGameAudio, () => {
           currentGameAudio = null;
@@ -1366,6 +1376,11 @@
     }
     
     function updateGamesCarousel() {
+      // Don't update games carousel if lockscreen is active
+      if (window.lockscreenActive) {
+        return;
+      }
+      
       const gameCards = document.querySelectorAll('.games-carousel-track .game-card');
       const totalGames = gameCards.length;
       const gameContainer = document.getElementById('game-container');
@@ -2004,6 +2019,19 @@
 
     // Enhanced keyboard support with two-level navigation
     document.addEventListener("keydown", (e) => {
+      // Don't handle keyboard events if lockscreen is active
+      if (window.lockscreenActive) {
+        console.log('Main app ignoring keyboard event - lockscreen active via flag');
+        return; // Let lockscreen handle the events
+      }
+      
+      // Fallback check using DOM element visibility
+      const lockscreen = document.getElementById('lockscreen');
+      if (lockscreen && (lockscreen.style.display !== 'none' && !lockscreen.hidden && lockscreen.offsetParent !== null)) {
+        console.log('Main app ignoring keyboard event - lockscreen is visible');
+        return; // Let lockscreen handle the events
+      }
+      
       if (navigationFocus === "nav") {
         // Navigation bar is focused - left/right moves through tabs
         if (e.key === "ArrowRight") {
@@ -2133,6 +2161,11 @@
     let lastGamepadInput = { axes: [0, 0], buttons: [], lastNavTime: 0 };
     
     function handleGamepadInput() {
+      // Don't handle gamepad input if lockscreen is active
+      if (window.lockscreenActive) {
+        return; // Let lockscreen handle gamepad input
+      }
+      
       const gamepads = navigator.getGamepads();
       if (!gamepads) {
         console.log('🎮 No gamepads detected');
