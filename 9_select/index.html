@@ -5,9 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ROG Ally Demo</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="lockscreen.js"></script>
 </head>
 <body>
-  <div id="app">
+  <!-- Lockscreen Interface -->
+  <div id="lockscreen" class="lockscreen-container">
+    <div class="lockscreen-background">
+      <!-- User Profile Section -->
+      <div class="user-profile">
+        <div class="avatar-container">
+          <img id="avatar-image" src="assets/lockscreen/tenarcher_focus.png" alt="User Avatar" class="avatar">
+        </div>
+        <div class="ghost-avatar-container">
+          <img id="ghost-avatar-image" src="assets/lockscreen/ghost.png" alt="Ghost Avatar" class="ghost-avatar">
+        </div>
+      </div>
+      
+      <!-- Username (fixed position) -->
+      <div class="username-container">
+        <img id="tenarcher-username" src="assets/lockscreen/tenarcher_name.png" alt="TenArcher" class="username tenarcher-active">
+        <img id="ghost-username" src="assets/lockscreen/ghost_name.png" alt="Ghost" class="username ghost-inactive">
+      </div>
+      
+      <!-- PIN Input Section -->
+      <div class="pin-section">
+        <div class="pin-dots">
+          <img class="pin-dot" data-index="0" src="assets/lockscreen/pin.png" alt="PIN Dot 1">
+          <img class="pin-dot" data-index="1" src="assets/lockscreen/pin.png" alt="PIN Dot 2">
+          <img class="pin-dot" data-index="2" src="assets/lockscreen/pin.png" alt="PIN Dot 3">
+          <img class="pin-dot" data-index="3" src="assets/lockscreen/pin.png" alt="PIN Dot 4">
+        </div>
+      </div>
+      
+      <!-- Game Tiles Section -->
+      <div class="game-tiles-container">
+        <div id="tenarcher-games" class="game-tiles tenarcher-active">
+          <div class="game-tile" data-game="0">
+            <img src="assets/lockscreen/game.png" alt="Game" class="game-image">
+          </div>
+          <div class="game-tile" data-game="1">
+            <img src="assets/lockscreen/avatar1.png" alt="Avatar 1" class="game-image">
+          </div>
+          <div class="game-tile" data-game="2">
+            <img src="assets/lockscreen/avatar2.png" alt="Avatar 2" class="game-image">
+          </div>
+          <div class="game-tile" data-game="3">
+            <img src="assets/lockscreen/avatar3.png" alt="Avatar 3" class="game-image">
+          </div>
+          <div class="game-tile more-games" data-game="4">
+            <img src="assets/lockscreen/plus3.png" alt="+3" class="game-image">
+          </div>
+          <div class="game-tile download-tile" data-game="5">
+            <img src="assets/lockscreen/update.png" alt="Download" class="game-image">
+          </div>
+        </div>
+        <div id="ghost-games" class="game-tiles ghost-inactive">
+          <div class="game-tile" data-game="0">
+            <img src="assets/lockscreen/game2.png" alt="Game 2" class="game-image">
+          </div>
+          <div class="game-tile" data-game="1">
+            <img src="assets/lockscreen/avatar4.png" alt="Avatar 4" class="game-image">
+          </div>
+          <div class="game-tile" data-game="2">
+            <img src="assets/lockscreen/avatar5.png" alt="Avatar 5" class="game-image">
+          </div>
+          <div class="game-tile" data-game="3">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
+          </div>
+          <div class="game-tile more-games" data-game="4">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
+          </div>
+          <div class="game-tile download-tile" data-game="5">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" style="display: none;">
     <div id="game-container">
       <div id="windows-shell">
         <div id="app-container">
@@ -164,6 +240,11 @@
     }
     
     function playGameAudio(gameId) {
+      // Don't play game audio if lockscreen is active
+      if (window.lockscreenActive) {
+        return;
+      }
+      
       // Only play audio when games carousel is focused
       if (tabs[selectedIndex] !== "games" || navigationFocus !== "carousel") {
         return;
@@ -204,6 +285,11 @@
     }
     
     function stopGameAudio() {
+      // Don't stop game audio operations if lockscreen is active
+      if (window.lockscreenActive) {
+        return;
+      }
+      
       if (currentGameAudio) {
         fadeOutAudio(currentGameAudio, () => {
           currentGameAudio = null;
@@ -1290,6 +1376,11 @@
     }
     
     function updateGamesCarousel() {
+      // Don't update games carousel if lockscreen is active
+      if (window.lockscreenActive) {
+        return;
+      }
+      
       const gameCards = document.querySelectorAll('.games-carousel-track .game-card');
       const totalGames = gameCards.length;
       const gameContainer = document.getElementById('game-container');
@@ -1928,6 +2019,19 @@
 
     // Enhanced keyboard support with two-level navigation
     document.addEventListener("keydown", (e) => {
+      // Don't handle keyboard events if lockscreen is active
+      if (window.lockscreenActive) {
+        console.log('Main app ignoring keyboard event - lockscreen active via flag');
+        return; // Let lockscreen handle the events
+      }
+      
+      // Fallback check using DOM element visibility
+      const lockscreen = document.getElementById('lockscreen');
+      if (lockscreen && (lockscreen.style.display !== 'none' && !lockscreen.hidden && lockscreen.offsetParent !== null)) {
+        console.log('Main app ignoring keyboard event - lockscreen is visible');
+        return; // Let lockscreen handle the events
+      }
+      
       if (navigationFocus === "nav") {
         // Navigation bar is focused - left/right moves through tabs
         if (e.key === "ArrowRight") {
@@ -2057,6 +2161,11 @@
     let lastGamepadInput = { axes: [0, 0], buttons: [], lastNavTime: 0 };
     
     function handleGamepadInput() {
+      // Don't handle gamepad input if lockscreen is active
+      if (window.lockscreenActive) {
+        return; // Let lockscreen handle gamepad input
+      }
+      
       const gamepads = navigator.getGamepads();
       if (!gamepads) {
         console.log('🎮 No gamepads detected');
