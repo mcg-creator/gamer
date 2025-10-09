@@ -498,8 +498,9 @@ class LockscreenManager {
     
     addPinWithSpacebar() {
         if (this.pinInput.length < 4) {
-            // Add a digit based on current focused pin position (using simple incremental digits)
-            this.pinInput += (this.pinInput.length + 1).toString();
+            // Add a digit based on current focused pin position (1-4)
+            const digitToAdd = (this.focusedPinIndex + 1).toString();
+            this.pinInput += digitToAdd;
             this.updatePinDisplay();
             
             // Move to next pin if not on the last one
