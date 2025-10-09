@@ -47,6 +47,11 @@ class GamepadManager {
             'RIGHT': 'ArrowRight'
         };
 
+        // Button to key mapping
+        this.buttonToKeyMap = {
+            'A': ' '  // A button maps to spacebar
+        };
+
         // Listen for gamepad connection/disconnection
         window.addEventListener('gamepadconnected', (e) => {
             console.log('🎮 Gamepad connected:', e.gamepad.id);
@@ -82,6 +87,9 @@ class GamepadManager {
 
         // Handle d-pad to arrow key mapping
         this.handleDpadToArrowKeys();
+        
+        // Handle button to key mapping
+        this.handleButtonToKeyMapping();
     }
 
     // Simulate keyboard events for d-pad inputs
@@ -98,11 +106,6 @@ class GamepadManager {
 
     // Handle d-pad to arrow key mapping
     handleDpadToArrowKeys(gamepadIndex = 0) {
-        // Don't simulate keyboard events if lockscreen is active - lockscreen handles gamepad directly
-        if (window.lockscreenActive) {
-            return;
-        }
-        
         const gamepad = this.currentState.get(gamepadIndex);
         if (!gamepad) return;
 
@@ -124,6 +127,22 @@ class GamepadManager {
             if (justReleasedNow) {
                 console.log(`🎮 D-pad ${dpadButton} released, simulating ${arrowKey} keyup`);
                 this.simulateKeyboardEvent(arrowKey, 'keyup');
+            }
+        }
+    }
+
+    // Handle button to key mapping
+    handleButtonToKeyMapping(gamepadIndex = 0) {
+        const gamepad = this.currentState.get(gamepadIndex);
+        if (!gamepad) return;
+
+        // Check each mapped button
+        for (const [buttonName, keyCode] of Object.entries(this.buttonToKeyMap)) {
+            const justPressedNow = this.justPressed(buttonName, gamepadIndex);
+
+            if (justPressedNow) {
+                console.log(`🎮 Button ${buttonName} pressed, simulating ${keyCode === ' ' ? 'Space' : keyCode} keydown`);
+                this.simulateKeyboardEvent(keyCode, 'keydown');
             }
         }
     }

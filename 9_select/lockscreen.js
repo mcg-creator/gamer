@@ -155,8 +155,8 @@ class LockscreenManager {
                 }
             }
         }
-        
-        // Handle d-pad input directly (don't rely on keyboard event conversion to avoid conflicts)
+
+        // Handle d-pad input directly (GamepadManager will also convert to keyboard events)
         if (this.gamepadManager.justPressed('UP')) {
             this.handleGamepadDirection('up');
         } else if (this.gamepadManager.justPressed('DOWN')) {
@@ -167,18 +167,14 @@ class LockscreenManager {
             this.handleGamepadDirection('right');
         }
         
-        // Check for A button (spacebar equivalent)
-        if (this.gamepadManager.justPressed('A')) {
-            this.handleSelect();
-        }
+        // Note: A button handling removed - let GamepadManager convert to spacebar
+        // This prevents double input from both direct gamepad and simulated keyboard
         
         // Check for B button (back/escape equivalent)
         if (this.gamepadManager.justPressed('B')) {
             this.handleBack();
         }
-    }
-    
-    handleGamepadDirection(direction) {
+    }    handleGamepadDirection(direction) {
         // Throttle gamepad input to prevent rapid firing
         const now = Date.now();
         if (this.lastGamepadInput && now - this.lastGamepadInput < 200) {
@@ -295,11 +291,11 @@ class LockscreenManager {
     }
     
     handleSelect() {
-        // Add debouncing for PIN input to prevent double registration
+        // Add debouncing for all select inputs to prevent double registration
         const now = Date.now();
-        if (this.currentFocus === 'pin' && now - this.lastPinInput < 300) {
-            console.log('PIN input debounced - too fast');
-            return; // Ignore rapid PIN inputs
+        if (now - this.lastPinInput < 300) {
+            console.log('Select input debounced - too fast');
+            return; // Ignore rapid inputs from any source
         }
         
         if (this.currentFocus === 'avatar') {
@@ -307,7 +303,7 @@ class LockscreenManager {
         } else if (this.currentFocus === 'games') {
             this.selectGame();
         } else if (this.currentFocus === 'pin') {
-            this.lastPinInput = now; // Update debounce timestamp
+            this.lastPinInput = now; // Update debounce timestamp for all PIN inputs
             this.addPinWithSpacebar();
             this.playSelectSound(); // carousel.mp3 only for PIN spacebar/A button
         }
