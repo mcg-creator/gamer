@@ -10,6 +10,7 @@ class LockscreenManager {
         this.focusedAvatarIndex = 0; // 0 = tenarcher, 1 = ghost
         this.lastUsernameIndex = 0; // Track previous username mode for crossfade detection
         this.lastGamepadInput = 0; // Throttle gamepad input
+        this.lastPinInput = 0; // Debounce PIN input to prevent double registration
         
         // Set global flag to indicate lockscreen is active
         window.lockscreenActive = true;
@@ -294,11 +295,19 @@ class LockscreenManager {
     }
     
     handleSelect() {
+        // Add debouncing for PIN input to prevent double registration
+        const now = Date.now();
+        if (this.currentFocus === 'pin' && now - this.lastPinInput < 300) {
+            console.log('PIN input debounced - too fast');
+            return; // Ignore rapid PIN inputs
+        }
+        
         if (this.currentFocus === 'avatar') {
             this.toggleUsername();
         } else if (this.currentFocus === 'games') {
             this.selectGame();
         } else if (this.currentFocus === 'pin') {
+            this.lastPinInput = now; // Update debounce timestamp
             this.addPinWithSpacebar();
             this.playSelectSound(); // carousel.mp3 only for PIN spacebar/A button
         }

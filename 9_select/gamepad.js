@@ -98,6 +98,11 @@ class GamepadManager {
 
     // Handle d-pad to arrow key mapping
     handleDpadToArrowKeys(gamepadIndex = 0) {
+        // Don't simulate keyboard events if lockscreen is active - lockscreen handles gamepad directly
+        if (window.lockscreenActive) {
+            return;
+        }
+        
         const gamepad = this.currentState.get(gamepadIndex);
         if (!gamepad) return;
 
