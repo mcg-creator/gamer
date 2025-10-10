@@ -1,102 +1,90 @@
-// InputManager - Unified input system
-// Combines GamepadManager and KeyboardManager for seamless input
+// InputManager - Unified input system for keyboard and gamepad
+// Provides unified interface for both keyboard and ASUS ROG Ally controller controls
 
 class InputManager {
     constructor() {
-        this.gamepad = new GamepadManager();
         this.keyboard = new KeyboardManager();
+        this.gamepad = new GamepadManager();
+        this.preferGamepad = false; // Prefer gamepad input when available
     }
 
-    // Update both input systems
+    // Update both keyboard and gamepad input systems
     update() {
-        this.gamepad.update();
         this.keyboard.update();
-    }
-
-    // Check if button is down (gamepad OR keyboard)
-    isButtonDown(buttonName, gamepadIndex = 0) {
-        return this.gamepad.isButtonDown(buttonName, gamepadIndex) || 
-               this.keyboard.isButtonDown(buttonName);
-    }
-
-    // Check if button was just pressed (gamepad OR keyboard)
-    justPressed(buttonName, gamepadIndex = 0) {
-        return this.gamepad.justPressed(buttonName, gamepadIndex) || 
-               this.keyboard.justPressed(buttonName);
-    }
-
-    // Check if button was just released (gamepad OR keyboard)
-    justReleased(buttonName, gamepadIndex = 0) {
-        return this.gamepad.justReleased(buttonName, gamepadIndex) || 
-               this.keyboard.justReleased(buttonName);
-    }
-
-    // Get stick value (gamepad takes priority, keyboard as fallback)
-    getStick(stickName, gamepadIndex = 0) {
-        const gamepadStick = this.gamepad.getStick(stickName, gamepadIndex);
+        this.gamepad.update();
         
-        // If gamepad has significant input, use it
-        if (gamepadStick.magnitude > 0.1) {
-            return gamepadStick;
+        // Prefer gamepad if connected
+        this.preferGamepad = this.gamepad.isConnected();
+    }
+
+    // Check if button is down (gamepad first, then keyboard)
+    isButtonDown(buttonName) {
+        if (this.preferGamepad && this.gamepad.isConnected()) {
+            return this.gamepad.isButtonDown(buttonName);
         }
-        
-        // Otherwise use keyboard
+        return this.keyboard.isButtonDown(buttonName);
+    }
+
+    // Check if button was just pressed (gamepad first, then keyboard)
+    justPressed(buttonName) {
+        if (this.preferGamepad && this.gamepad.isConnected()) {
+            return this.gamepad.justPressed(buttonName);
+        }
+        return this.keyboard.justPressed(buttonName);
+    }
+
+    // Check if button was just released (gamepad first, then keyboard)
+    justReleased(buttonName) {
+        if (this.preferGamepad && this.gamepad.isConnected()) {
+            return this.gamepad.justReleased(buttonName);
+        }
+        return this.keyboard.justReleased(buttonName);
+    }
+
+    // Get stick value (gamepad first, then keyboard)
+    getStick(stickName) {
+        if (this.preferGamepad && this.gamepad.isConnected()) {
+            return this.gamepad.getStick(stickName);
+        }
         return this.keyboard.getStick(stickName);
     }
 
-    // Get trigger value (gamepad takes priority, keyboard as fallback)
-    getTrigger(triggerName, gamepadIndex = 0) {
-        const gamepadTrigger = this.gamepad.getTrigger(triggerName, gamepadIndex);
-        
-        // If gamepad trigger is pressed, use it
-        if (gamepadTrigger > 0.1) {
-            return gamepadTrigger;
+    // Get trigger value (gamepad first, then keyboard)
+    getTrigger(triggerName) {
+        if (this.preferGamepad && this.gamepad.isConnected()) {
+            return this.gamepad.getTrigger(triggerName);
         }
-        
-        // Otherwise use keyboard
         return this.keyboard.getTrigger(triggerName);
     }
 
-    // Get all pressed buttons from both sources
-    getPressedButtons(gamepadIndex = 0) {
-        const gamepadButtons = this.gamepad.getPressedButtons(gamepadIndex);
-        const keyboardButtons = this.keyboard.getPressedButtons();
-        
-        // Combine and remove duplicates
-        const allButtons = [...new Set([...gamepadButtons, ...keyboardButtons])];
-        return allButtons;
+    // Get all pressed buttons (gamepad first, then keyboard)
+    getPressedButtons() {
+        if (this.preferGamepad && this.gamepad.isConnected()) {
+            return this.gamepad.getPressedButtons();
+        }
+        return this.keyboard.getPressedButtons();
     }
 
-    // Rumble (gamepad only)
-    async rumble(intensity = 0.5, duration = 200, gamepadIndex = 0) {
-        return this.gamepad.rumble(intensity, duration, gamepadIndex);
+    // Rumble (only works with gamepad)
+    async rumble(intensity = 0.5, duration = 200) {
+        if (this.gamepad.isConnected()) {
+            return this.gamepad.rumble(intensity, duration);
+        }
+        return Promise.resolve();
     }
 
     // Check if gamepad is connected
-    isGamepadConnected(gamepadIndex = 0) {
-        return this.gamepad.isConnected(gamepadIndex);
+    isGamepadConnected() {
+        return this.gamepad.isConnected();
     }
 
     // Get active input method
     getActiveInputMethod() {
-        const hasGamepad = this.isGamepadConnected();
-        const hasKeyboard = this.keyboard.keysDown.size > 0 || 
-                           this.keyboard.getStick('LEFT').magnitude > 0 ||
-                           this.keyboard.getStick('RIGHT').magnitude > 0;
-        
-        if (hasGamepad && hasKeyboard) return 'both';
-        if (hasGamepad) return 'gamepad';
-        if (hasKeyboard) return 'keyboard';
-        return 'none';
+        return this.gamepad.isConnected() ? 'gamepad' : 'keyboard';
     }
 
-    // Get keyboard controls reference
+    // Get keyboard controls info
     getKeyboardControls() {
-        return this.keyboard.getKeyboardMap();
-    }
-
-    // Get first connected gamepad (for info display)
-    getGamepad(index = 0) {
-        return this.gamepad.getGamepad(index);
+        return this.keyboard.getKeyboardControls();
     }
 }

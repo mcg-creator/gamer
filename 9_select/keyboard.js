@@ -5,15 +5,24 @@ class KeyboardManager {
     constructor() {
         // Keyboard to button mapping
         this.keyMap = {
-            // WASD for ABXY (common gaming layout)
-            'w': 'Y',           // W = Y (top)
+            // WASD for ABXY (custom layout)
+            'w': 'Y',           // W = Y button
             'W': 'Y',
-            'a': 'X',           // A = X (left)
-            'A': 'X',
-            's': 'B',           // S = B (bottom)
-            'S': 'B',
-            'd': 'A',           // D = A (right)
-            'D': 'A',
+            'a': 'A',           // A = A button (mapped to A for ROG Ally)
+            'A': 'A',
+            's': 'A',           // S = A button
+            'S': 'A',
+            'd': 'B',           // D = B button
+            'D': 'B',
+            
+            // Direct ABXY key mapping - additional option
+            'x': 'X',           // X key = X button
+            'X': 'X',
+            'y': 'Y',           // Y key = Y button
+            'Y': 'Y',
+            'b': 'B',           // B key = B button
+            'B': 'B',
+            // Note: A key already mapped to X button via WASD
             
             // Arrow keys for D-pad
             'ArrowUp': 'UP',
@@ -43,6 +52,9 @@ class KeyboardManager {
             'Tab': 'VIEW',
             'Enter': 'MENU',
             'Escape': 'HOME',
+            
+            // Spacebar for A button (selection)
+            ' ': 'A',
             
             // Number keys for quick testing
             '1': 'LB',
@@ -209,7 +221,7 @@ class KeyboardManager {
     // Get keyboard mapping reference
     getKeyboardMap() {
         return {
-            'ABXY': 'W/A/S/D (Y/X/B/A)',
+            'ABXY': 'W/A/S/D (Y/A/A/B)',
             'D-Pad': 'Arrow Keys',
             'Shoulders': 'Q/E (LB/RB)',
             'Triggers': 'Z/C or 3/4 (LT/RT)',
@@ -217,6 +229,18 @@ class KeyboardManager {
             'Right Stick': 'T/F/G/H or Numpad 8/4/5/6',
             'Stick Clicks': 'R/F (LS/RS)',
             'Menu': 'Tab/Enter/Esc (VIEW/MENU/HOME)'
+        };
+    }
+
+    // Get keyboard controls info
+    getKeyboardControls() {
+        return {
+            'Navigation': 'Arrow Keys (↑↓←→)',
+            'Selection': 'A key, S key, or Spacebar',
+            'Alternative Navigation': 'WASD or IJKL',
+            'Menu': 'Enter (MENU), Tab (VIEW), Esc (HOME)',
+            'Shoulders': 'Q (LB), E (RB)',
+            'Triggers': 'Z (LT), C (RT)'
         };
     }
 }

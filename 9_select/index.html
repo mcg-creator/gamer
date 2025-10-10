@@ -5,85 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ROG Ally Demo</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="lockscreen.js"></script>
 </head>
 <body>
-  <!-- Lockscreen Interface -->
-  <div id="lockscreen" class="lockscreen-container">
-    <div class="lockscreen-background">
-      <!-- User Profile Section -->
-      <div class="user-profile">
-        <div class="avatar-container">
-          <img id="avatar-image" src="assets/lockscreen/tenarcher_focus.png" alt="User Avatar" class="avatar">
-        </div>
-        <div class="ghost-avatar-container">
-          <img id="ghost-avatar-image" src="assets/lockscreen/ghost.png" alt="Ghost Avatar" class="ghost-avatar">
-        </div>
-      </div>
-      
-      <!-- Username (fixed position) -->
-      <div class="username-container">
-        <img id="tenarcher-username" src="assets/lockscreen/tenarcher_name.png" alt="TenArcher" class="username tenarcher-active">
-        <img id="ghost-username" src="assets/lockscreen/ghost_name.png" alt="Ghost" class="username ghost-inactive">
-      </div>
-      
-      <!-- PIN Input Section -->
-      <div class="pin-section">
-        <div class="pin-dots">
-          <img class="pin-dot" data-index="0" src="assets/lockscreen/pin.png" alt="PIN Dot 1">
-          <img class="pin-dot" data-index="1" src="assets/lockscreen/pin.png" alt="PIN Dot 2">
-          <img class="pin-dot" data-index="2" src="assets/lockscreen/pin.png" alt="PIN Dot 3">
-          <img class="pin-dot" data-index="3" src="assets/lockscreen/pin.png" alt="PIN Dot 4">
-        </div>
-      </div>
-      
-      <!-- Game Tiles Section -->
-      <div class="game-tiles-container">
-        <div id="tenarcher-games" class="game-tiles tenarcher-active">
-          <div class="game-tile" data-game="0">
-            <img src="assets/lockscreen/game.png" alt="Game" class="game-image">
-          </div>
-          <div class="game-tile" data-game="1">
-            <img src="assets/lockscreen/avatar1.png" alt="Avatar 1" class="game-image">
-          </div>
-          <div class="game-tile" data-game="2">
-            <img src="assets/lockscreen/avatar2.png" alt="Avatar 2" class="game-image">
-          </div>
-          <div class="game-tile" data-game="3">
-            <img src="assets/lockscreen/avatar3.png" alt="Avatar 3" class="game-image">
-          </div>
-          <div class="game-tile more-games" data-game="4">
-            <img src="assets/lockscreen/plus3.png" alt="+3" class="game-image">
-          </div>
-          <div class="game-tile download-tile" data-game="5">
-            <img src="assets/lockscreen/update.png" alt="Download" class="game-image">
-          </div>
-        </div>
-        <div id="ghost-games" class="game-tiles ghost-inactive">
-          <div class="game-tile" data-game="0">
-            <img src="assets/lockscreen/game2.png" alt="Game 2" class="game-image">
-          </div>
-          <div class="game-tile" data-game="1">
-            <img src="assets/lockscreen/avatar4.png" alt="Avatar 4" class="game-image">
-          </div>
-          <div class="game-tile" data-game="2">
-            <img src="assets/lockscreen/avatar5.png" alt="Avatar 5" class="game-image">
-          </div>
-          <div class="game-tile" data-game="3">
-            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
-          </div>
-          <div class="game-tile more-games" data-game="4">
-            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
-          </div>
-          <div class="game-tile download-tile" data-game="5">
-            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=" alt="Empty" class="game-image">
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="app" style="display: none;">
+  <div id="app">
     <div id="game-container">
       <div id="windows-shell">
         <div id="app-container">
@@ -162,7 +86,7 @@
 
           <!-- Bottom Controls -->
           <div id="bottom-controls">
-            <img id="control-image" src="" alt="Controls" />
+            <img id="control-image" src="assets/btns/play.png" alt="Controls" />
           </div>
 
         </div>
@@ -240,8 +164,12 @@
     }
     
     function playGameAudio(gameId) {
-      // Don't play game audio if lockscreen is active
-      if (window.lockscreenActive) {
+      // Don't play game audio if music is turned off
+      if (musicMode === 'music_off_focus') {
+        // Stop any currently playing game audio when music is off
+        if (currentGameAudio && !currentGameAudio.paused) {
+          fadeOutAudio(currentGameAudio);
+        }
         return;
       }
       
@@ -285,11 +213,6 @@
     }
     
     function stopGameAudio() {
-      // Don't stop game audio operations if lockscreen is active
-      if (window.lockscreenActive) {
-        return;
-      }
-      
       if (currentGameAudio) {
         fadeOutAudio(currentGameAudio, () => {
           currentGameAudio = null;
@@ -1375,28 +1298,32 @@
       updateBottomControls(); // Update button when navigating through notifications
     }
     
-    function updateGamesCarousel() {
-      // Don't update games carousel if lockscreen is active
-      if (window.lockscreenActive) {
-        return;
-      }
-      
+    function updateGamesCarousel(skipBackgroundUpdate = false) {
       const gameCards = document.querySelectorAll('.games-carousel-track .game-card');
       const totalGames = gameCards.length;
       const gameContainer = document.getElementById('game-container');
+      const isInitialRender = isInitialCarouselRender;
       
       if (totalGames === 0) return; // No games to display
       
-      // Update background based on current game
-      const currentGame = games[currentGameIndex];
-      if (currentGame && gameContainer) {
-        // Remove all background classes
-        const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
-        existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
-        
-        // Add the current game's background class if it has a background
-        if (currentGame.hasBackground) {
-          gameContainer.classList.add(`bg-${currentGame.id}`);
+      // Update background based on current game (only if changed and not on initial load)
+      if (!skipBackgroundUpdate) {
+        const currentGame = games[currentGameIndex];
+        if (currentGame && gameContainer) {
+          const newBgClass = currentGame.hasBackground ? `bg-${currentGame.id}` : null;
+          const existingBgClasses = Array.from(gameContainer.classList).filter(cls => cls.startsWith('bg-'));
+          const currentBgClass = existingBgClasses[0] || null;
+          
+          // Only update if the background actually changed
+          if (currentBgClass !== newBgClass) {
+            // Remove all background classes
+            existingBgClasses.forEach(cls => gameContainer.classList.remove(cls));
+            
+            // Add the new background class if it has a background
+            if (newBgClass) {
+              gameContainer.classList.add(newBgClass);
+            }
+          }
         }
       }
       
@@ -1461,22 +1388,54 @@
           } else if (relativeIndex === totalGames - 1) {
             // Left position (previous item) - use regular image
             card.classList.add('left');
-            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
             card.style.zIndex = '1';
-            card.style.transform = '';
-            card.style.opacity = '1';
             card.style.visibility = 'visible';
+            
+            // On initial render, start off-screen and slide in
+            if (isInitialRender) {
+              card.style.transition = 'none';
+              card.style.transform = 'translateX(-800px)';
+              card.style.opacity = '0';
+              
+              // Trigger slide-in animation after a frame
+              requestAnimationFrame(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                card.style.transform = '';
+                card.style.opacity = '1';
+              });
+            } else {
+              card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+              card.style.transform = '';
+              card.style.opacity = '1';
+            }
+            
             if (gameImage && gameId) {
               gameImage.src = `assets/games/${gameId}.png`;
             }
           } else if (relativeIndex === 1) {
             // Right position (next item) - use regular image
             card.classList.add('right');
-            card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
             card.style.zIndex = '1';
-            card.style.transform = '';
-            card.style.opacity = '1';
             card.style.visibility = 'visible';
+            
+            // On initial render, start off-screen and slide in
+            if (isInitialRender) {
+              card.style.transition = 'none';
+              card.style.transform = 'translateX(800px)';
+              card.style.opacity = '0';
+              
+              // Trigger slide-in animation after a frame
+              requestAnimationFrame(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                card.style.transform = '';
+                card.style.opacity = '1';
+              });
+            } else {
+              card.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+              card.style.transform = '';
+              card.style.opacity = '1';
+            }
+            
             if (gameImage && gameId) {
               gameImage.src = `assets/games/${gameId}.png`;
             }
@@ -1504,6 +1463,11 @@
             }
           }
         });
+        
+        // Mark initial carousel render as complete
+        if (isInitialRender) {
+          isInitialCarouselRender = false;
+        }
       });
     }
 
@@ -1532,7 +1496,12 @@
     const galleryCarousel = document.getElementById("gallery-carousel");
     const defaultContent = document.getElementById("default-content");
 
+    let hasInitiallyRendered = false;
+    let isInitialContentLoad = true;
+    let isInitialCarouselRender = true; // Flag for initial carousel slide-in animation
+    
     function renderNav() {
+      const isInitialRender = !hasInitiallyRendered;
       nav.innerHTML = "";
       tabs.forEach((tab, i) => {
         const btn = document.createElement("button");
@@ -1577,6 +1546,20 @@
       // Update content based on selected tab
       updateContent();
       updateFocusVisuals();
+      
+      // Trigger fade-in only on initial render
+      // Use requestAnimationFrame to ensure all layout and rendering is complete
+      if (isInitialRender) {
+        hasInitiallyRendered = true;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const topNav = document.getElementById('top-nav');
+            const bottomControls = document.getElementById('bottom-controls');
+            if (topNav) topNav.classList.add('fade-in');
+            if (bottomControls) bottomControls.classList.add('fade-in');
+          });
+        });
+      }
     }
 
     function updateContent() {
@@ -1587,7 +1570,61 @@
         stopGameAudio();
       }
       
-      // Fade out all carousels and default content first
+      // Skip fade transitions on initial load to prevent flickering
+      if (isInitialContentLoad) {
+        isInitialContentLoad = false;
+        // Just hide all content immediately without transitions
+        const friendsCarousel = document.getElementById('friends-carousel');
+        const settingsCarousel = document.getElementById('settings-carousel');
+        const copilotCarousel = document.getElementById('copilot-carousel');
+        
+        gamesCarousel.style.display = "none";
+        appsCarousel.style.display = "none";
+        friendsCarousel.style.display = "none";
+        notifyCarousel.style.display = "none";
+        galleryCarousel.style.display = "none";
+        settingsCarousel.style.display = "none";
+        copilotCarousel.style.display = "none";
+        defaultContent.style.display = "none";
+        
+        // Show the current tab immediately with full opacity
+        if (currentTab === "games") {
+          gamesCarousel.style.display = "flex";
+          gamesCarousel.style.opacity = "1";
+          updateGamesCarousel(true); // Skip background update on initial load
+        } else if (currentTab === "apps") {
+          appsCarousel.style.display = "flex";
+          appsCarousel.style.opacity = "1";
+          updateAppsCarousel();
+        } else if (currentTab === "friends") {
+          friendsCarousel.style.display = "flex";
+          friendsCarousel.style.opacity = "1";
+          updateFriendsCarousel();
+        } else if (currentTab === "gallery") {
+          galleryCarousel.style.display = "flex";
+          galleryCarousel.style.opacity = "1";
+          updateGalleryCarousel();
+        } else if (currentTab === "notifications") {
+          notifyCarousel.style.display = "flex";
+          notifyCarousel.style.opacity = "1";
+          updateNotifyCarousel();
+        } else if (currentTab === "settings") {
+          settingsCarousel.style.display = "flex";
+          settingsCarousel.style.opacity = "1";
+          updateSettingsCarousel();
+        } else if (currentTab === "copilot") {
+          copilotCarousel.style.display = "flex";
+          copilotCarousel.style.opacity = "1";
+          updateCopilotCarousel();
+        }
+        
+        // Update bottom controls on initial load too
+        updateBottomControls();
+        
+        return; // Exit early, skip the fade animation code below
+      }
+      
+      // Fade out all carousels and default content first (for subsequent tab changes)
       const fadeOutDuration = 200; // milliseconds
       
       gamesCarousel.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
@@ -1776,16 +1813,22 @@
             const selectedItem = currentSetting.items[currentSetting.selectedItem];
             if (selectedItem) {
               if (selectedItem.id === 'music') {
-                newSrc = 'assets/btns/settings/toggle.png';
+                // Use current music mode for the button image
+                newSrc = 'assets/btns/settings/toggle_mode.png';
               } else if (selectedItem.id === 'sfx') {
-                newSrc = 'assets/btns/settings/toggle.png';
+                // Use current sfx mode for the button image
+                newSrc = 'assets/btns/settings/toggle_mode.png';
               } else if (selectedItem.id === 'captions') {
-                newSrc = 'assets/btns/settings/toggle.png';
+                // Use current captions mode for the button image
+                newSrc = 'assets/btns/settings/toggle_mode.png';
               } else if (selectedItem.id === 'battery') {
+                // Use current battery mode for the button image
                 newSrc = 'assets/btns/settings/toggle_mode.png';
               } else if (selectedItem.id === 'wifi') {
-                newSrc = 'assets/btns/settings/toggle.png';
+                // Use current wifi mode for the button image
+                newSrc = 'assets/btns/settings/toggle_mode.png';
               } else if (selectedItem.id === 'airplane') {
+                // Use current airplane mode for the button image
                 newSrc = 'assets/btns/settings/toggle_mode.png';
               } else if (selectedItem.id === 'sleep') {
                 newSrc = 'assets/btns/settings/sleep.png';
@@ -2019,19 +2062,6 @@
 
     // Enhanced keyboard support with two-level navigation
     document.addEventListener("keydown", (e) => {
-      // Don't handle keyboard events if lockscreen is active
-      if (window.lockscreenActive) {
-        console.log('Main app ignoring keyboard event - lockscreen active via flag');
-        return; // Let lockscreen handle the events
-      }
-      
-      // Fallback check using DOM element visibility
-      const lockscreen = document.getElementById('lockscreen');
-      if (lockscreen && (lockscreen.style.display !== 'none' && !lockscreen.hidden && lockscreen.offsetParent !== null)) {
-        console.log('Main app ignoring keyboard event - lockscreen is visible');
-        return; // Let lockscreen handle the events
-      }
-      
       if (navigationFocus === "nav") {
         // Navigation bar is focused - left/right moves through tabs
         if (e.key === "ArrowRight") {
@@ -2148,225 +2178,25 @@
         }
       }
       
-      if (e.key === "Enter") {
+      if (e.key === "Enter" || e.key === " ") {
         if (navigationFocus === "nav") {
           selectTab(selectedIndex);
         }
+      } else if (e.key === "a" || e.key === "A") {
+        // Handle A key for battery mode cycling in settings carousel
+        if (navigationFocus === "carousel" && tabs[selectedIndex] === "settings") {
+          cycleBatteryMode();
+          cycleWifiMode();
+          cycleAirplaneMode();
+          cycleMusicMode();
+          cycleSfxMode();
+          cycleCaptionsMode();
+        }
+        e.preventDefault();
       } else if (e.key === "d") {
         e.preventDefault(); // Prevent zoom control
       }
     });
-
-    // Enhanced Gamepad support with two-level navigation
-    let lastGamepadInput = { axes: [0, 0], buttons: [], lastNavTime: 0 };
-    
-    function handleGamepadInput() {
-      // Don't handle gamepad input if lockscreen is active
-      if (window.lockscreenActive) {
-        return; // Let lockscreen handle gamepad input
-      }
-      
-      const gamepads = navigator.getGamepads();
-      if (!gamepads) {
-        console.log('🎮 No gamepads detected');
-        return;
-      }
-
-      const gp = gamepads[0]; // Assume single controller for simplicity
-      if (!gp) {
-        console.log('🎮 No gamepad connected');
-        return;
-      }
-
-
-
-      // Deadzone for analog sticks - reduced for better sensitivity
-      const deadzone = 0.15;
-      const axisX = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
-      const axisY = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
-
-      // Debug: Log analog stick values occasionally
-      if (Math.random() < 0.01 && (Math.abs(gp.axes[0]) > 0.1 || Math.abs(gp.axes[1]) > 0.1)) {
-        console.log(`🕹️ Analog stick: X=${gp.axes[0].toFixed(2)}, Y=${gp.axes[1].toFixed(2)}, filtered X=${axisX.toFixed(2)}, Y=${axisY.toFixed(2)}`);
-      }
-
-
-
-      // Prevent rapid-fire input with debouncing
-      const currentTime = Date.now();
-      const minTimeBetweenInputs = 200; // 200ms minimum between inputs
-      
-      // Check if enough time has passed since last navigation
-      const timeSinceLastInput = currentTime - lastGamepadInput.lastNavTime;
-      const inputChanged = (axisX !== 0 || axisY !== 0) && timeSinceLastInput > minTimeBetweenInputs;
-
-      if (inputChanged) {
-        if (navigationFocus === "nav") {
-          // Navigation bar focused - left/right controls tabs, down enters carousel
-          if (axisX > 0) {
-            selectedIndex = (selectedIndex + 1) % tabs.length;
-            renderNav();
-            // Play navigation sound for gamepad
-            if (window.playNavSound) {
-              window.playNavSound();
-            }
-          } else if (axisX < 0) {
-            selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
-            renderNav();
-            // Play navigation sound for gamepad
-            if (window.playNavSound) {
-              window.playNavSound();
-            }
-          } else if (axisY > 0 && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends" || tabs[selectedIndex] === "gallery" || tabs[selectedIndex] === "notifications" || tabs[selectedIndex] === "settings" || tabs[selectedIndex] === "copilot")) {
-            // Move focus down to carousel
-            navigationFocus = "carousel";
-            updateFocusVisuals();
-            // Play carousel sound when moving from nav to carousel via gamepad
-            if (window.playCarouselSound) {
-              window.playCarouselSound();
-            }
-          }
-        } else if (navigationFocus === "carousel") {
-          // Carousel focused - left/right controls items, up returns to nav
-          if (axisX > 0) {
-            if (tabs[selectedIndex] === "games") {
-              navigateGamesCarousel('right');
-            } else if (tabs[selectedIndex] === "apps") {
-              navigateAppsCarousel('right');
-            } else if (tabs[selectedIndex] === "friends") {
-              navigateFriendsCarousel('right');
-            } else if (tabs[selectedIndex] === "gallery") {
-              navigateGalleryCarousel('right');
-            } else if (tabs[selectedIndex] === "notifications") {
-              navigateNotifyCarousel('right');
-            } else if (tabs[selectedIndex] === "settings") {
-              navigateSettingsCarousel('right');
-            } else if (tabs[selectedIndex] === "copilot") {
-              navigateCopilotCarousel('right');
-            }
-            // Play carousel navigation sound
-            if (window.playCarouselNavSound) {
-              window.playCarouselNavSound();
-            }
-          } else if (axisX < 0) {
-            if (tabs[selectedIndex] === "games") {
-              navigateGamesCarousel('left');
-            } else if (tabs[selectedIndex] === "apps") {
-              navigateAppsCarousel('left');
-            } else if (tabs[selectedIndex] === "friends") {
-              navigateFriendsCarousel('left');
-            } else if (tabs[selectedIndex] === "gallery") {
-              navigateGalleryCarousel('left');
-            } else if (tabs[selectedIndex] === "notifications") {
-              navigateNotifyCarousel('left');
-            } else if (tabs[selectedIndex] === "settings") {
-              navigateSettingsCarousel('left');
-            } else if (tabs[selectedIndex] === "copilot") {
-              navigateCopilotCarousel('left');
-            }
-            // Play carousel navigation sound
-            if (window.playCarouselNavSound) {
-              window.playCarouselNavSound();
-            }
-          } else if (axisY < 0) {
-            // Move focus back up to navigation, or navigate stack items for settings/copilot
-            if (tabs[selectedIndex] === "settings") {
-              // Try to navigate within stack first, if it returns false then go to nav bar
-              if (!navigateStackItems('up')) {
-                navigationFocus = "nav";
-                updateFocusVisuals();
-                // Play nav sound when moving from carousel to nav
-                if (window.playNavSound) {
-                  window.playNavSound();
-                }
-              }
-            } else if (tabs[selectedIndex] === "copilot") {
-              // Try to navigate within stack first, if it returns false then go to nav bar
-              if (!navigateCopilotStackItems('up')) {
-                navigationFocus = "nav";
-                updateFocusVisuals();
-                // Play nav sound when moving from carousel to nav
-                if (window.playNavSound) {
-                  window.playNavSound();
-                }
-              }
-            } else {
-              navigationFocus = "nav";
-              updateFocusVisuals();
-              // Play nav sound when moving from carousel to nav
-              if (window.playNavSound) {
-                window.playNavSound();
-              }
-            }
-          } else if (axisY > 0) {
-            // Navigate stack items for settings/copilot, but don't cycle at bottom
-            if (tabs[selectedIndex] === "settings") {
-              navigateStackItems('down'); // If it returns false, just stay at bottom item
-            } else if (tabs[selectedIndex] === "copilot") {
-              navigateCopilotStackItems('down'); // If it returns false, just stay at bottom item
-            }
-          }
-        }
-      }
-
-      // D-pad support with two-level navigation - DISABLED: Using d-pad simulation system instead
-      /*
-      if (gp.buttons[15]?.pressed && !lastGamepadInput.buttons[15]) { // D-pad right
-        if (navigationFocus === "nav") {
-          selectedIndex = (selectedIndex + 1) % tabs.length;
-          renderNav();
-        } else if (navigationFocus === "carousel") {
-          if (tabs[selectedIndex] === "games") {
-            navigateGamesCarousel('right');
-          } else if (tabs[selectedIndex] === "apps") {
-            navigateAppsCarousel('right');
-          } else if (tabs[selectedIndex] === "friends") {
-            navigateFriendsCarousel('right');
-          }
-        }
-      } else if (gp.buttons[14]?.pressed && !lastGamepadInput.buttons[14]) { // D-pad left
-        if (navigationFocus === "nav") {
-          selectedIndex = (selectedIndex - 1 + tabs.length) % tabs.length;
-          renderNav();
-        } else if (navigationFocus === "carousel") {
-          if (tabs[selectedIndex] === "games") {
-            navigateGamesCarousel('left');
-          } else if (tabs[selectedIndex] === "apps") {
-            navigateAppsCarousel('left');
-          } else if (tabs[selectedIndex] === "friends") {
-            navigateFriendsCarousel('left');
-          }
-        }
-      } else if (gp.buttons[12]?.pressed && !lastGamepadInput.buttons[12]) { // D-pad up
-        if (navigationFocus === "carousel") {
-          // Move focus back to navigation
-          navigationFocus = "nav";
-          updateFocusVisuals();
-        }
-      } else if (gp.buttons[13]?.pressed && !lastGamepadInput.buttons[13]) { // D-pad down
-        if (navigationFocus === "nav" && (tabs[selectedIndex] === "games" || tabs[selectedIndex] === "apps" || tabs[selectedIndex] === "friends")) {
-          // Move focus down to carousel
-          navigationFocus = "carousel";
-          updateFocusVisuals();
-        }
-      } else */if (gp.buttons[0]?.pressed && !lastGamepadInput.buttons[0]) { // A button
-        if (navigationFocus === "nav") {
-          selectTab(selectedIndex);
-        }
-      }
-
-      // Store current state for next comparison
-      lastGamepadInput.axes = [axisX, axisY];
-      lastGamepadInput.buttons = gp.buttons.map(b => b?.pressed || false);
-      
-      // Update timestamp when navigation actually happens
-      if (inputChanged) {
-        lastGamepadInput.lastNavTime = currentTime;
-      }
-    }
-
-    // Poll gamepad input
-    setInterval(handleGamepadInput, 100);
 
     // Settings system - control cards with single and stacked items
     let settings = [];
@@ -2384,6 +2214,204 @@
         img.src = imagePath;
         preloadedFocusImages.set(imagePath, img);
         console.log(`Preloaded focus image: ${imagePath}`);
+      }
+    }
+    
+    // Battery mode cycling state
+    let batteryMode = 'battery_focus'; // Can be 'battery_focus', 'battery_perf_focus', 'battery_saver_focus'
+    
+    // Function to cycle through battery modes
+    function cycleBatteryMode() {
+      // Only cycle if we're currently focused on the battery item
+      const currentSetting = settings[currentSettingIndex];
+      const currentItem = currentSetting.type === 'stack' ? 
+        currentSetting.items[currentSetting.selectedItem] : currentSetting;
+      
+      if (currentItem.id === 'battery') {
+        // Cycle through the battery modes
+        if (batteryMode === 'battery_focus') {
+          batteryMode = 'battery_perf_focus';
+        } else if (batteryMode === 'battery_perf_focus') {
+          batteryMode = 'battery_saver_focus';
+        } else if (batteryMode === 'battery_saver_focus') {
+          batteryMode = 'battery_focus';
+        }
+        
+        console.log(`Battery mode cycled to: ${batteryMode}`);
+        
+        // Play carousel row navigation sound for battery mode change
+        if (window.playCarouselNavSound) {
+          window.playCarouselNavSound();
+        }
+        
+        // Update the settings carousel to reflect the new battery mode
+        updateSettingsCarousel();
+      }
+    }
+    
+    // WiFi mode cycling state
+    let wifiMode = 'wifi_focus'; // Can be 'wifi_focus' or 'wifi_off_focus'
+    
+    // Function to cycle through wifi modes
+    function cycleWifiMode() {
+      // Only cycle if we're currently focused on the wifi item
+      const currentSetting = settings[currentSettingIndex];
+      const currentItem = currentSetting.type === 'stack' ? 
+        currentSetting.items[currentSetting.selectedItem] : currentSetting;
+      
+      if (currentItem.id === 'wifi') {
+        // Toggle between wifi on and off
+        if (wifiMode === 'wifi_focus') {
+          wifiMode = 'wifi_off_focus';
+        } else if (wifiMode === 'wifi_off_focus') {
+          wifiMode = 'wifi_focus';
+        }
+        
+        console.log(`WiFi mode cycled to: ${wifiMode}`);
+        
+        // Play carousel row navigation sound for wifi mode change
+        if (window.playCarouselNavSound) {
+          window.playCarouselNavSound();
+        }
+        
+        // Update the settings carousel to reflect the new wifi mode
+        updateSettingsCarousel();
+      }
+    }
+    
+    // Airplane mode cycling state
+    let airplaneMode = 'airplane_focus'; // Can be 'airplane_focus' or 'airplane_on_focus'
+    
+    // Function to cycle through airplane modes
+    function cycleAirplaneMode() {
+      // Only cycle if we're currently focused on the airplane item
+      const currentSetting = settings[currentSettingIndex];
+      const currentItem = currentSetting.type === 'stack' ? 
+        currentSetting.items[currentSetting.selectedItem] : currentSetting;
+      
+      if (currentItem.id === 'airplane') {
+        // Toggle between airplane mode off and airplane mode on
+        if (airplaneMode === 'airplane_focus') {
+          airplaneMode = 'airplane_on_focus';
+        } else if (airplaneMode === 'airplane_on_focus') {
+          airplaneMode = 'airplane_focus';
+        }
+        
+        console.log(`Airplane mode cycled to: ${airplaneMode}`);
+        
+        // Conditional logic: If airplane mode is turned on, automatically turn off WiFi
+        if (airplaneMode === 'airplane_on_focus') {
+          console.log('Airplane mode activated - turning off WiFi');
+          wifiMode = 'wifi_off_focus';
+        }
+        
+        // Play carousel row navigation sound for airplane mode change
+        if (window.playCarouselNavSound) {
+          window.playCarouselNavSound();
+        }
+        
+        // Update the settings carousel to reflect the new airplane mode
+        updateSettingsCarousel();
+      }
+    }
+    
+    // Music mode cycling state
+    let musicMode = 'music_focus'; // Can be 'music_focus' or 'music_off_focus'
+    
+    // Function to cycle through music modes
+    function cycleMusicMode() {
+      // Only cycle if we're currently focused on the music item
+      const currentSetting = settings[currentSettingIndex];
+      const currentItem = currentSetting.type === 'stack' ? 
+        currentSetting.items[currentSetting.selectedItem] : currentSetting;
+      
+      if (currentItem.id === 'music') {
+        // Toggle between music on and off
+        if (musicMode === 'music_focus') {
+          musicMode = 'music_off_focus';
+        } else if (musicMode === 'music_off_focus') {
+          musicMode = 'music_focus';
+        }
+        
+        console.log(`Music mode cycled to: ${musicMode}`);
+        
+        // If music is turned off, stop any currently playing game audio
+        if (musicMode === 'music_off_focus' && currentGameAudio && !currentGameAudio.paused) {
+          console.log('Music turned off - stopping game audio');
+          fadeOutAudio(currentGameAudio);
+        }
+        
+        // Play carousel row navigation sound for music mode change
+        if (window.playCarouselNavSound) {
+          window.playCarouselNavSound();
+        }
+        
+        // Update the settings carousel to reflect the new music mode
+        updateSettingsCarousel();
+      }
+    }
+    
+    // SFX mode cycling state
+    let sfxMode = 'sfx_focus'; // Can be 'sfx_focus' or 'sfx_off_focus'
+    window.sfxMode = sfxMode; // Make available globally for sound functions
+    
+    // Function to cycle through sfx modes
+    function cycleSfxMode() {
+      // Only cycle if we're currently focused on the sfx item
+      const currentSetting = settings[currentSettingIndex];
+      const currentItem = currentSetting.type === 'stack' ? 
+        currentSetting.items[currentSetting.selectedItem] : currentSetting;
+      
+      if (currentItem.id === 'sfx') {
+        // Toggle between sfx on and off
+        if (sfxMode === 'sfx_focus') {
+          sfxMode = 'sfx_off_focus';
+        } else if (sfxMode === 'sfx_off_focus') {
+          sfxMode = 'sfx_focus';
+        }
+        
+        console.log(`SFX mode cycled to: ${sfxMode}`);
+        
+        // Make sfxMode available globally for sound functions
+        window.sfxMode = sfxMode;
+        
+        // Play carousel row navigation sound for sfx mode change
+        if (window.playCarouselNavSound) {
+          window.playCarouselNavSound();
+        }
+        
+        // Update the settings carousel to reflect the new sfx mode
+        updateSettingsCarousel();
+      }
+    }
+    
+    // Captions mode cycling state
+    let captionsMode = 'captions_focus'; // Can be 'captions_focus' or 'captions_off_focus'
+    
+    // Function to cycle through captions modes
+    function cycleCaptionsMode() {
+      // Only cycle if we're currently focused on the captions item
+      const currentSetting = settings[currentSettingIndex];
+      const currentItem = currentSetting.type === 'stack' ? 
+        currentSetting.items[currentSetting.selectedItem] : currentSetting;
+      
+      if (currentItem.id === 'captions') {
+        // Toggle between captions on and off
+        if (captionsMode === 'captions_focus') {
+          captionsMode = 'captions_off_focus';
+        } else if (captionsMode === 'captions_off_focus') {
+          captionsMode = 'captions_focus';
+        }
+        
+        console.log(`Captions mode cycled to: ${captionsMode}`);
+        
+        // Play carousel row navigation sound for captions mode change
+        if (window.playCarouselNavSound) {
+          window.playCarouselNavSound();
+        }
+        
+        // Update the settings carousel to reflect the new captions mode
+        updateSettingsCarousel();
       }
     }
     
@@ -2525,6 +2553,27 @@
         }
       });
       
+      // Preload battery mode images
+      preloadFocusImage('assets/settings/battery_focus.png');
+      preloadFocusImage('assets/settings/battery_perf_focus.png');
+      preloadFocusImage('assets/settings/battery_saver_focus.png');
+      
+      // Preload wifi mode images
+      preloadFocusImage('assets/settings/wifi_focus.png');
+      preloadFocusImage('assets/settings/wifi_off_focus.png');
+      
+      // Preload airplane mode images
+      preloadFocusImage('assets/settings/airplane_focus.png');
+      preloadFocusImage('assets/settings/airplane_on_focus.png');
+      
+      // Preload audio mode images
+      preloadFocusImage('assets/settings/music_focus.png');
+      preloadFocusImage('assets/settings/music_off_focus.png');
+      preloadFocusImage('assets/settings/sfx_focus.png');
+      preloadFocusImage('assets/settings/sfx_off_focus.png');
+      preloadFocusImage('assets/settings/captions_focus.png');
+      preloadFocusImage('assets/settings/captions_off_focus.png');
+      
       createSettingsCards();
       updateSettingsCarousel();
     }
@@ -2571,7 +2620,30 @@
             }
             
             const itemImage = document.createElement('img');
-            itemImage.src = `assets/settings/${item.id}.png`;
+            // Special handling for toggleable modes - use current state for initial image
+            if (item.id === 'wifi') {
+              // Convert focus state to default state by removing '_focus' suffix
+              const defaultMode = wifiMode.replace('_focus', '');
+              itemImage.src = `assets/settings/${defaultMode}.png`;
+            } else if (item.id === 'airplane') {
+              // Convert focus state to default state by removing '_focus' suffix
+              const defaultMode = airplaneMode.replace('_focus', '');
+              itemImage.src = `assets/settings/${defaultMode}.png`;
+            } else if (item.id === 'music') {
+              // Convert focus state to default state by removing '_focus' suffix
+              const defaultMode = musicMode.replace('_focus', '');
+              itemImage.src = `assets/settings/${defaultMode}.png`;
+            } else if (item.id === 'sfx') {
+              // Convert focus state to default state by removing '_focus' suffix
+              const defaultMode = sfxMode.replace('_focus', '');
+              itemImage.src = `assets/settings/${defaultMode}.png`;
+            } else if (item.id === 'captions') {
+              // Convert focus state to default state by removing '_focus' suffix
+              const defaultMode = captionsMode.replace('_focus', '');
+              itemImage.src = `assets/settings/${defaultMode}.png`;
+            } else {
+              itemImage.src = `assets/settings/${item.id}.png`;
+            }
             itemImage.alt = item.title;
             itemImage.className = 'stack-item-image';
             
@@ -2775,7 +2847,24 @@
             item.classList.add('focused');
             if (itemImage) {
               // Enhanced image loading for ROG Ally compatibility
-              const focusImagePath = `assets/settings/${itemData.id}_focus.png`;
+              let focusImagePath;
+              
+              // Special handling for battery mode cycling
+              if (itemData.id === 'battery') {
+                focusImagePath = `assets/settings/${batteryMode}.png`;
+              } else if (itemData.id === 'wifi') {
+                focusImagePath = `assets/settings/${wifiMode}.png`;
+              } else if (itemData.id === 'airplane') {
+                focusImagePath = `assets/settings/${airplaneMode}.png`;
+              } else if (itemData.id === 'music') {
+                focusImagePath = `assets/settings/${musicMode}.png`;
+              } else if (itemData.id === 'sfx') {
+                focusImagePath = `assets/settings/${sfxMode}.png`;
+              } else if (itemData.id === 'captions') {
+                focusImagePath = `assets/settings/${captionsMode}.png`;
+              } else {
+                focusImagePath = `assets/settings/${itemData.id}_focus.png`;
+              }
               
               // Check if we have a preloaded image
               if (preloadedFocusImages.has(focusImagePath)) {
@@ -2797,7 +2886,34 @@
             }
           } else {
             if (itemImage) {
-              itemImage.src = `assets/settings/${itemData.id}.png`;
+              // Special handling for battery mode cycling - use default state of current mode
+              if (itemData.id === 'battery') {
+                // Convert focus state to default state by removing '_focus' suffix
+                const defaultMode = batteryMode.replace('_focus', '');
+                itemImage.src = `assets/settings/${defaultMode}.png`;
+              } else if (itemData.id === 'wifi') {
+                // Convert focus state to default state by removing '_focus' suffix
+                const defaultMode = wifiMode.replace('_focus', '');
+                itemImage.src = `assets/settings/${defaultMode}.png`;
+              } else if (itemData.id === 'airplane') {
+                // Convert focus state to default state by removing '_focus' suffix
+                const defaultMode = airplaneMode.replace('_focus', '');
+                itemImage.src = `assets/settings/${defaultMode}.png`;
+              } else if (itemData.id === 'music') {
+                // Convert focus state to default state by removing '_focus' suffix
+                const defaultMode = musicMode.replace('_focus', '');
+                itemImage.src = `assets/settings/${defaultMode}.png`;
+              } else if (itemData.id === 'sfx') {
+                // Convert focus state to default state by removing '_focus' suffix
+                const defaultMode = sfxMode.replace('_focus', '');
+                itemImage.src = `assets/settings/${defaultMode}.png`;
+              } else if (itemData.id === 'captions') {
+                // Convert focus state to default state by removing '_focus' suffix
+                const defaultMode = captionsMode.replace('_focus', '');
+                itemImage.src = `assets/settings/${defaultMode}.png`;
+              } else {
+                itemImage.src = `assets/settings/${itemData.id}.png`;
+              }
             }
           }
           
@@ -2948,6 +3064,25 @@
     // Initialize the interface
     document.addEventListener('DOMContentLoaded', async () => {
       console.log('🎮 Starting ROG Ally Game Interface...');
+      
+      // Set all carousels to display none and opacity 1 before initialization
+      // This prevents any visible transitions during setup
+      const gamesCarousel = document.getElementById('games-carousel');
+      const appsCarousel = document.getElementById('apps-carousel');
+      const friendsCarousel = document.getElementById('friends-carousel');
+      const notifyCarousel = document.getElementById('notify-carousel');
+      const galleryCarousel = document.getElementById('gallery-carousel');
+      const settingsCarousel = document.getElementById('settings-carousel');
+      const copilotCarousel = document.getElementById('copilot-carousel');
+      
+      gamesCarousel.style.opacity = '1';
+      appsCarousel.style.opacity = '1';
+      friendsCarousel.style.opacity = '1';
+      notifyCarousel.style.opacity = '1';
+      galleryCarousel.style.opacity = '1';
+      settingsCarousel.style.opacity = '1';
+      copilotCarousel.style.opacity = '1';
+      
       await initializeGames();
       await initializeApps();
       await initializeFriends();
@@ -2956,12 +3091,30 @@
       await initializeSettings();
       await initializeCopilot();
       createDynamicCSS(); // Create CSS after games, apps, friends, notifications, gallery, settings, and copilot are loaded
-      renderNav();
+      
+      // Set the initial background immediately for the starting tab (games)
+      // This prevents the background from flickering when the page loads
+      const gameContainer = document.getElementById('game-container');
+      if (gameContainer && games.length > 0) {
+        const firstGame = games[0];
+        if (firstGame.hasBackground) {
+          gameContainer.classList.add(`bg-${firstGame.id}`);
+        }
+      }
+      
+      renderNav(); // This will trigger the fade-in on first render
+      
+      // Make the entire app visible instantly now that everything is ready
+      // Use requestAnimationFrame to ensure all layout is complete
+      requestAnimationFrame(() => {
+        const app = document.getElementById('app');
+        if (app) app.classList.add('ready');
+      });
     });
   </script>
 
-  <script src="gamepad.js"></script>
   <script src="keyboard.js"></script>
+  <script src="gamepad.js"></script>
   <script src="input.js"></script>
   <script src="main.js"></script>
 </body>

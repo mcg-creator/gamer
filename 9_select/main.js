@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function init() {
-    // Create unified input manager (gamepad + keyboard)
+    // Create input manager (supports both keyboard and gamepad)
     inputManager = new InputManager();
     
     // Load navigation sound
@@ -26,41 +26,26 @@ function init() {
     navAudio.volume = 0.5; // Set volume to 50%
     window.navAudio = navAudio; // Make available globally for lockscreen
     
-    // Load carousel sound
-    carouselAudio = new Audio('assets/sounds/carousel2.MP3');
+    // Load carousel transition sound (nav to carousel)
+    carouselAudio = new Audio('assets/sounds/carousel.MP3');
     carouselAudio.preload = 'auto';
     carouselAudio.volume = 0.5; // Set volume to 50%
     
-    // Load carousel navigation sound (used by lockscreen for PIN entry)
-    carouselNavAudio = new Audio('assets/sounds/carousel.MP3');
+    // Load carousel row navigation sound (left/right in carousel)
+    carouselNavAudio = new Audio('assets/sounds/carousel_row.MP3');
     carouselNavAudio.preload = 'auto';
     carouselNavAudio.volume = 0.5; // Set volume to 50%
     window.carouselAudio = carouselNavAudio; // Make available globally for lockscreen
     
-    // Setup arrow key event listeners to test d-pad mapping
-    setupArrowKeyListeners();
-    
     // Start update loop
     update();
     
-    // Display keyboard controls
+    // Display controls info
+    console.log('🎮 ASUS ROG Ally Controller + Keyboard Support Enabled!');
+    console.log('📋 Controls:');
+    console.log('  🎮 ASUS ROG Ally: D-pad + Left Stick for navigation, A button for selection');
+    console.log('  ⌨️ Keyboard: Arrow keys for navigation, A/S/Spacebar for selection');
     console.log('Keyboard Controls:', inputManager.getKeyboardControls());
-    console.log('Press A/D button to test rumble!');
-    console.log('Use D-pad to test arrow key simulation!');
-    
-    // Add gamepad testing
-    setTimeout(() => {
-        console.log('🎮 Testing gamepad detection...');
-        const gamepads = navigator.getGamepads();
-        console.log('Gamepads:', gamepads);
-        if (gamepads && gamepads[0]) {
-            console.log('First gamepad:', gamepads[0].id);
-            console.log('Buttons count:', gamepads[0].buttons.length);
-            console.log('Axes count:', gamepads[0].axes.length);
-        } else {
-            console.log('❌ No gamepad detected. Make sure your ASUS ROG Ally is connected and try pressing a button.');
-        }
-    }, 2000);
 }
 
 // Setup arrow key event listeners for testing
@@ -87,13 +72,18 @@ function setupArrowKeyListeners() {
 
 // Main update loop
 function update() {
-    // Update input state (gamepad + keyboard)
+    // Update input state (keyboard and gamepad)
     inputManager.update();
     
-    // Debug: Log input method
+    // Debug: Log input method changes
     const inputMethod = inputManager.getActiveInputMethod();
     if (inputMethod !== lastInputMethod) {
-        console.log('Active input method:', inputMethod);
+        console.log(`🔄 Active input method changed to: ${inputMethod}`);
+        if (inputMethod === 'gamepad') {
+            console.log('🎮 ASUS ROG Ally controller detected and active!');
+        } else {
+            console.log('⌨️ Using keyboard input');
+        }
         lastInputMethod = inputMethod;
     }
     
@@ -113,61 +103,14 @@ function updateActiveButtons() { }
 
 // Handle input events
 function handleInput() {
-    // Check if lockscreen is active
-    const lockscreen = document.getElementById('lockscreen');
-    const isLockscreenActive = lockscreen && lockscreen.style.display !== 'none';
-    
-    if (isLockscreenActive && window.lockscreenManager) {
-        // Handle lockscreen input through gamepad
-        handleLockscreenGamepadInput();
-    } else {
-        // Handle main app input
-        handleMainAppInput();
-    }
+    // Handle main input
+    handleMainInput();
 }
 
-function handleLockscreenGamepadInput() {
-    // Map gamepad buttons to lockscreen actions
-    const dpadUp = inputManager.justPressed('DPadUp');
-    const dpadDown = inputManager.justPressed('DPadDown');
-    const dpadLeft = inputManager.justPressed('DPadLeft');
-    const dpadRight = inputManager.justPressed('DPadRight');
-    const buttonA = inputManager.justPressed('A');
-    const buttonB = inputManager.justPressed('B');
-    
-    if (dpadUp) {
-        window.lockscreenManager.navigateUp();
-    } else if (dpadDown) {
-        window.lockscreenManager.navigateDown();
-    } else if (dpadLeft) {
-        window.lockscreenManager.navigateLeft();
-    } else if (dpadRight) {
-        window.lockscreenManager.navigateRight();
-    } else if (buttonA) {
-        window.lockscreenManager.handleSelect();
-    } else if (buttonB) {
-        window.lockscreenManager.handleBack();
-    }
-    
-    // Handle number input via gamepad for PIN
-    // Map face buttons to numbers for PIN entry
-    if (window.lockscreenManager.currentFocus === 'pin') {
-        if (inputManager.justPressed('A')) {
-            window.lockscreenManager.addPinDigit('1');
-        } else if (inputManager.justPressed('B')) {
-            window.lockscreenManager.addPinDigit('2');
-        } else if (inputManager.justPressed('X')) {
-            window.lockscreenManager.addPinDigit('3');
-        } else if (inputManager.justPressed('Y')) {
-            window.lockscreenManager.addPinDigit('4');
-        }
-    }
-}
-
-function handleMainAppInput() {
+function handleMainInput() {
     const appContainer = document.getElementById('app-container');
     
-    // Check for keyboard key 'A' press
+    // Check for keyboard key 'A' press for app scaling
     if (inputManager.isButtonDown('A') && !lastButtonState) {
         handleScale();
     }
@@ -182,14 +125,18 @@ function handleScale() {
         const isScaled = appContainer.classList.contains('scaled');
         appContainer.classList.toggle('scaled');
         console.log('Container scaled:', !isScaled);
-        inputManager.rumble(0.8, 200);
     } else {
         console.error('App container not found - check HTML structure');
     }
 }
 
-// Function to play navigation sound
+// Function to play navigation sound (nav.mp3)
 function playNavSound() {
+    // Check if SFX is enabled before playing navigation sounds
+    if (window.sfxMode && window.sfxMode === 'sfx_off_focus') {
+        return; // SFX is off, don't play sound
+    }
+    
     if (navAudio) {
         navAudio.currentTime = 0; // Reset to beginning
         navAudio.play().catch(error => {
@@ -198,8 +145,13 @@ function playNavSound() {
     }
 }
 
-// Function to play carousel sound
+// Function to play carousel transition sound (carousel.mp3 - nav to carousel)
 function playCarouselSound() {
+    // Check if SFX is enabled before playing carousel sounds
+    if (window.sfxMode && window.sfxMode === 'sfx_off_focus') {
+        return; // SFX is off, don't play sound
+    }
+    
     if (carouselAudio) {
         carouselAudio.currentTime = 0; // Reset to beginning
         carouselAudio.play().catch(error => {
@@ -208,8 +160,13 @@ function playCarouselSound() {
     }
 }
 
-// Function to play carousel navigation sound
+// Function to play carousel row navigation sound (carousel_row.mp3 - left/right in carousel)
 function playCarouselNavSound() {
+    // Check if SFX is enabled before playing carousel navigation sounds
+    if (window.sfxMode && window.sfxMode === 'sfx_off_focus') {
+        return; // SFX is off, don't play sound
+    }
+    
     if (carouselNavAudio) {
         carouselNavAudio.currentTime = 0; // Reset to beginning
         carouselNavAudio.play().catch(error => {
@@ -222,34 +179,6 @@ function playCarouselNavSound() {
 window.playNavSound = playNavSound;
 window.playCarouselSound = playCarouselSound;
 window.playCarouselNavSound = playCarouselNavSound;
-
-// Add global gamepad test function
-window.testGamepad = function() {
-    console.log('🎮 Manual gamepad test...');
-    const gamepads = navigator.getGamepads();
-    console.log('Gamepads array:', gamepads);
-    
-    for (let i = 0; i < gamepads.length; i++) {
-        if (gamepads[i]) {
-            const gp = gamepads[i];
-            console.log(`Gamepad ${i}:`, gp.id);
-            console.log(`  Buttons (${gp.buttons.length}):`, gp.buttons.map((b, idx) => `${idx}:${b.pressed}`).filter(b => b.includes('true')));
-            console.log(`  Axes (${gp.axes.length}):`, gp.axes.map((a, idx) => `${idx}:${a.toFixed(3)}`));
-            
-            // Test d-pad specifically
-            console.log(`  D-pad: UP=${gp.buttons[12]?.pressed}, DOWN=${gp.buttons[13]?.pressed}, LEFT=${gp.buttons[14]?.pressed}, RIGHT=${gp.buttons[15]?.pressed}`);
-        }
-    }
-    
-    if (!gamepads || !gamepads[0]) {
-        console.log('❌ No gamepad detected. Make sure to:');
-        console.log('  1. Connect your ASUS ROG Ally');
-        console.log('  2. Press any button on the gamepad first');
-        console.log('  3. Make sure the page has focus');
-    }
-};
-
-console.log('💡 Type testGamepad() in console to manually test gamepad detection');
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {

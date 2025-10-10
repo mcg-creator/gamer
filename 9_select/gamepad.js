@@ -34,23 +34,27 @@ class GamepadManager {
 
         this.deadzone = 0.15;           // Deadzone for analog sticks
         this.triggerThreshold = 0.1;    // Threshold for trigger activation
+        this.stickThreshold = 0.5;      // Threshold for stick direction detection
 
         // Current and previous gamepad states
         this.currentState = new Map();
         this.previousState = new Map();
 
-        // D-pad to arrow key mapping
-        this.dpadToKeyMap = {
+        // D-pad and stick to arrow key mapping
+        this.directionToKeyMap = {
             'UP': 'ArrowUp',
             'DOWN': 'ArrowDown',
             'LEFT': 'ArrowLeft',
             'RIGHT': 'ArrowRight'
         };
 
-        // Button to key mapping
+        // Button to key mapping - A button maps to spacebar and 'a' key
         this.buttonToKeyMap = {
-            'A': ' '  // A button maps to spacebar
+            'A': [' ', 'a', 'A']  // A button maps to spacebar and 'a'/'A' keys
         };
+
+        // Track simulated key states to avoid double events
+        this.simulatedKeys = new Set();
 
         // Listen for gamepad connection/disconnection
         window.addEventListener('gamepadconnected', (e) => {
@@ -73,26 +77,22 @@ class GamepadManager {
             if (gamepad) {
                 this.currentState.set(gamepad.index, gamepad);
                 gamepadFound = true;
-                // Debug: Log gamepad detection more frequently for testing
-                if (Math.random() < 0.02) { // ~2% chance per frame to see if gamepad is detected
-                    console.log(`🎮 Gamepad detected: ${gamepad.id}, buttons: ${gamepad.buttons.length}, axes: ${gamepad.axes.length}`);
-                }
             }
         }
 
-        // Debug: Log if no gamepad found more frequently
-        if (!gamepadFound && Math.random() < 0.02) {
-            console.log('🎮 No gamepad detected in update loop - connect your ASUS ROG Ally');
+        if (gamepadFound) {
+            // Handle d-pad to arrow key mapping
+            this.handleDirectionToArrowKeys();
+            
+            // Handle button to key mapping
+            this.handleButtonToKeyMapping();
+            
+            // Handle analog stick to arrow key mapping
+            this.handleAnalogStickToArrowKeys();
         }
-
-        // Handle d-pad to arrow key mapping
-        this.handleDpadToArrowKeys();
-        
-        // Handle button to key mapping
-        this.handleButtonToKeyMapping();
     }
 
-    // Simulate keyboard events for d-pad inputs
+    // Simulate keyboard events for gamepad inputs
     simulateKeyboardEvent(keyCode, eventType) {
         const event = new KeyboardEvent(eventType, {
             key: keyCode,
@@ -105,23 +105,12 @@ class GamepadManager {
     }
 
     // Handle d-pad to arrow key mapping
-    handleDpadToArrowKeys(gamepadIndex = 0) {
+    handleDirectionToArrowKeys(gamepadIndex = 0) {
         const gamepad = this.currentState.get(gamepadIndex);
-        if (!gamepad) {
-            // Debug: Log when no gamepad is found
-            if (Math.random() < 0.01) {
-                console.log('🎮 No gamepad found in handleDpadToArrowKeys');
-            }
-            return;
-        }
-
-        // Debug: More frequent logging for testing
-        if (Math.random() < 0.05) {
-            console.log(`🎮 D-pad states: UP=${gamepad.buttons[12]?.pressed}, DOWN=${gamepad.buttons[13]?.pressed}, LEFT=${gamepad.buttons[14]?.pressed}, RIGHT=${gamepad.buttons[15]?.pressed}`);
-        }
+        if (!gamepad) return;
 
         // Check each d-pad direction
-        for (const [dpadButton, arrowKey] of Object.entries(this.dpadToKeyMap)) {
+        for (const [dpadButton, arrowKey] of Object.entries(this.directionToKeyMap)) {
             const justPressedNow = this.justPressed(dpadButton, gamepadIndex);
             const justReleasedNow = this.justReleased(dpadButton, gamepadIndex);
 
@@ -137,24 +126,61 @@ class GamepadManager {
         }
     }
 
+    // Handle analog stick to arrow key mapping
+    handleAnalogStickToArrowKeys(gamepadIndex = 0) {
+        const gamepad = this.currentState.get(gamepadIndex);
+        if (!gamepad) return;
+
+        const leftStick = this.getStick('LEFT', gamepadIndex);
+        
+        // Check stick directions and map to arrow keys
+        const directions = {
+            'UP': leftStick.y > this.stickThreshold,
+            'DOWN': leftStick.y < -this.stickThreshold,
+            'LEFT': leftStick.x < -this.stickThreshold,
+            'RIGHT': leftStick.x > this.stickThreshold
+        };
+
+        for (const [direction, isActive] of Object.entries(directions)) {
+            const arrowKey = this.directionToKeyMap[direction];
+            const keyStateKey = `stick_${direction}`;
+            
+            if (isActive && !this.simulatedKeys.has(keyStateKey)) {
+                console.log(`🎮 Left stick ${direction}, simulating ${arrowKey} keydown`);
+                this.simulatedKeys.add(keyStateKey);
+                this.simulateKeyboardEvent(arrowKey, 'keydown');
+            } else if (!isActive && this.simulatedKeys.has(keyStateKey)) {
+                console.log(`🎮 Left stick ${direction} released, simulating ${arrowKey} keyup`);
+                this.simulatedKeys.delete(keyStateKey);
+                this.simulateKeyboardEvent(arrowKey, 'keyup');
+            }
+        }
+    }
+
     // Handle button to key mapping
     handleButtonToKeyMapping(gamepadIndex = 0) {
         const gamepad = this.currentState.get(gamepadIndex);
-        if (!gamepad) {
-            // Debug: Log when no gamepad is found
-            if (Math.random() < 0.01) {
-                console.log('🎮 No gamepad found in handleButtonToKeyMapping');
-            }
-            return;
-        }
+        if (!gamepad) return;
 
         // Check each mapped button
-        for (const [buttonName, keyCode] of Object.entries(this.buttonToKeyMap)) {
+        for (const [buttonName, keyCodes] of Object.entries(this.buttonToKeyMap)) {
             const justPressedNow = this.justPressed(buttonName, gamepadIndex);
+            const justReleasedNow = this.justReleased(buttonName, gamepadIndex);
 
             if (justPressedNow) {
-                console.log(`🎮 Button ${buttonName} pressed, simulating ${keyCode === ' ' ? 'Space' : keyCode} keydown`);
-                this.simulateKeyboardEvent(keyCode, 'keydown');
+                console.log(`🎮 Button ${buttonName} pressed, simulating keys: ${keyCodes.join(', ')}`);
+                // Simulate all mapped keys
+                keyCodes.forEach(keyCode => {
+                    this.simulateKeyboardEvent(keyCode, 'keydown');
+                });
+            }
+
+            if (justReleasedNow) {
+                console.log(`🎮 Button ${buttonName} released, simulating keys release: ${keyCodes.join(', ')}`);
+                // Simulate all mapped keys release
+                keyCodes.forEach(keyCode => {
+                    this.simulateKeyboardEvent(keyCode, 'keyup');
+                });
             }
         }
     }

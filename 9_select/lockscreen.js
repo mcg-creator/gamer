@@ -1,16 +1,18 @@
 // Lockscreen functionality for ASUS ROG Ally prototype
 class LockscreenManager {
     constructor() {
-        this.currentFocus = 'avatar'; // avatar, pin, games
-        this.pinInput = '';
-        this.correctPin = '1234'; // Demo PIN
+        this.currentFocus = 'avatar'; // avatar, games
         this.focusedGameIndex = 0; // Start with first interactive game
-        this.focusedPinIndex = 0; // Current PIN dot focus (0-3)
         this.usernameIndex = 0; // 0 = tenarcher_name, 1 = ghost_name
         this.focusedAvatarIndex = 0; // 0 = tenarcher, 1 = ghost
         this.lastUsernameIndex = 0; // Track previous username mode for crossfade detection
-        this.lastGamepadInput = 0; // Throttle gamepad input
-        this.lastPinInput = 0; // Debounce PIN input to prevent double registration
+        
+        // Hold to unlock functionality
+        this.isHolding = false;
+        this.holdProgress = 0;
+        this.holdDuration = 1500; // 1.5 seconds to unlock
+        this.holdStartTime = 0;
+        this.holdAnimationFrame = null;
         
         // Set global flag to indicate lockscreen is active
         window.lockscreenActive = true;
@@ -30,10 +32,10 @@ class LockscreenManager {
         this.ghostAvatarImg = document.getElementById('ghost-avatar-image');
         this.tenarcherUsernameImg = document.getElementById('tenarcher-username');
         this.ghostUsernameImg = document.getElementById('ghost-username');
-        this.pinDots = document.querySelectorAll('.pin-dot');
         this.tenarcherGameTiles = document.getElementById('tenarcher-games');
         this.ghostGameTiles = document.getElementById('ghost-games');
         this.gameTiles = this.tenarcherGameTiles.querySelectorAll('.game-tile'); // Default to TenArcher tiles for navigation
+        this.holdProgressBar = document.getElementById('hold-progress-bar');
         
         // Avatar should use tenarcher images
         this.avatar = { 
@@ -113,95 +115,13 @@ class LockscreenManager {
     bindEvents() {
         // Keyboard events
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
-        
-        // Initialize GamepadManager
-        this.gamepadManager = new GamepadManager();
-        
-        // Start gamepad update loop
-        this.startGamepadLoop();
-    }
-    
-    startGamepadLoop() {
-        const updateGamepad = () => {
-            this.gamepadManager.update();
-            this.handleGamepadInput();
-            requestAnimationFrame(updateGamepad);
-        };
-        updateGamepad();
-    }
-    
-    handleGamepadInput() {
-        // Handle joystick input
-        const leftStick = this.gamepadManager.getStick('LEFT');
-        
-        // Check for joystick movement (with threshold to prevent drift)
-        const threshold = 0.7;
-        
-        // Left stick navigation
-        if (leftStick.magnitude > threshold) {
-            if (Math.abs(leftStick.x) > Math.abs(leftStick.y)) {
-                // Horizontal movement
-                if (leftStick.x > threshold) {
-                    this.handleGamepadDirection('right');
-                } else if (leftStick.x < -threshold) {
-                    this.handleGamepadDirection('left');
-                }
-            } else {
-                // Vertical movement
-                if (leftStick.y > threshold) {
-                    this.handleGamepadDirection('up');
-                } else if (leftStick.y < -threshold) {
-                    this.handleGamepadDirection('down');
-                }
-            }
-        }
-
-        // Handle d-pad input directly (GamepadManager will also convert to keyboard events)
-        if (this.gamepadManager.justPressed('UP')) {
-            this.handleGamepadDirection('up');
-        } else if (this.gamepadManager.justPressed('DOWN')) {
-            this.handleGamepadDirection('down');
-        } else if (this.gamepadManager.justPressed('LEFT')) {
-            this.handleGamepadDirection('left');
-        } else if (this.gamepadManager.justPressed('RIGHT')) {
-            this.handleGamepadDirection('right');
-        }
-        
-        // Note: A button handling removed - let GamepadManager convert to spacebar
-        // This prevents double input from both direct gamepad and simulated keyboard
-        
-        // Check for B button (back/escape equivalent)
-        if (this.gamepadManager.justPressed('B')) {
-            this.handleBack();
-        }
-    }    handleGamepadDirection(direction) {
-        // Throttle gamepad input to prevent rapid firing
-        const now = Date.now();
-        if (this.lastGamepadInput && now - this.lastGamepadInput < 200) {
-            return;
-        }
-        this.lastGamepadInput = now;
-        
-        switch (direction) {
-            case 'up':
-                this.navigateUp();
-                break;
-            case 'down':
-                this.navigateDown();
-                break;
-            case 'left':
-                this.navigateLeft();
-                break;
-            case 'right':
-                this.navigateRight();
-                break;
-        }
+        document.addEventListener('keyup', (e) => this.handleKeyUp(e));
     }
     
     handleKeyDown(e) {
         console.log('Lockscreen handling key:', e.key);
         e.preventDefault();
-        e.stopPropagation(); // Prevent event from bubbling to main app
+        e.stopPropagation(); // Prevent event from bubbling to main
         
         switch (e.key) {
             case 'ArrowUp':
@@ -217,22 +137,26 @@ class LockscreenManager {
                 this.navigateRight();
                 break;
             case 'Enter':
-            case ' ':
                 this.handleSelect();
                 break;
             case 'Escape':
                 this.handleBack();
                 break;
-            // Number keys for PIN input
-            case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-                if (this.currentFocus === 'pin') {
-                    this.addPinDigit(e.key);
+            case 'y':
+            case 'Y':
+                if (!this.isHolding) {
+                    this.startHolding();
                 }
                 break;
-            case 'Backspace':
-                if (this.currentFocus === 'pin') {
-                    this.removePinDigit();
+        }
+    }
+    
+    handleKeyUp(e) {
+        switch (e.key) {
+            case 'y':
+            case 'Y':
+                if (this.isHolding) {
+                    this.stopHolding();
                 }
                 break;
         }
@@ -240,37 +164,29 @@ class LockscreenManager {
     
     navigateUp() {
         if (this.currentFocus === 'games') {
-            this.currentFocus = 'pin';
-        } else if (this.currentFocus === 'pin') {
             this.currentFocus = 'avatar';
         }
         this.updateFocus();
-        this.playNavSound(); // nav.mp3 for vertical navigation
+        this.playLockscreenNavSound(); // Use lockscreen-specific navigation sound
     }
     
     navigateDown() {
         if (this.currentFocus === 'avatar') {
-            this.currentFocus = 'pin';
-        } else if (this.currentFocus === 'pin') {
             this.currentFocus = 'games';
         }
         this.updateFocus();
-        this.playNavSound(); // nav.mp3 for vertical navigation
+        this.playLockscreenNavSound(); // Use lockscreen-specific navigation sound
     }
     
     navigateLeft() {
         if (this.currentFocus === 'games') {
             this.previousGame();
             this.updateFocus();
-            this.playNavSound(); // nav.mp3 for footer items
-        } else if (this.currentFocus === 'pin') {
-            this.previousPin();
-            this.updateFocus();
-            this.playNavSound(); // nav.mp3 for PIN left navigation
+            this.playLockscreenNavSound(); // Use lockscreen-specific navigation sound
         } else if (this.currentFocus === 'avatar') {
             this.previousAvatar();
             this.updateFocus();
-            this.playNavSound(); // nav.mp3 for avatar navigation
+            this.playLockscreenNavSound(); // Use lockscreen-specific navigation sound
         }
     }
     
@@ -278,47 +194,25 @@ class LockscreenManager {
         if (this.currentFocus === 'games') {
             this.nextGame();
             this.updateFocus();
-            this.playNavSound(); // nav.mp3 for footer items
-        } else if (this.currentFocus === 'pin') {
-            this.nextPin();
-            this.updateFocus();
-            this.playNavSound(); // nav.mp3 for PIN right navigation
+            this.playLockscreenNavSound(); // Use lockscreen-specific navigation sound
         } else if (this.currentFocus === 'avatar') {
             this.nextAvatar();
             this.updateFocus();
-            this.playNavSound(); // nav.mp3 for avatar navigation
+            this.playLockscreenNavSound(); // Use lockscreen-specific navigation sound
         }
     }
     
     handleSelect() {
-        // Add debouncing for all select inputs to prevent double registration
-        const now = Date.now();
-        if (now - this.lastPinInput < 300) {
-            console.log('Select input debounced - too fast');
-            return; // Ignore rapid inputs from any source
-        }
-        
         if (this.currentFocus === 'avatar') {
-            this.toggleUsername();
+            // Avatar selection now unlocks the device directly
+            this.unlockDevice();
         } else if (this.currentFocus === 'games') {
             this.selectGame();
-        } else if (this.currentFocus === 'pin') {
-            this.lastPinInput = now; // Update debounce timestamp for all PIN inputs
-            this.addPinWithSpacebar();
-            this.playSelectSound(); // carousel.mp3 only for PIN spacebar/A button
         }
-        // No sound for avatar/games selection
     }
     
     handleBack() {
-        if (this.currentFocus === 'pin' && this.pinInput.length > 0) {
-            this.removePinDigit();
-        }
-    }
-    
-    toggleUsername() {
-        this.usernameIndex = (this.usernameIndex + 1) % this.usernames.length;
-        this.updateUsernameImage();
+        // Can add any general back functionality here if needed
     }
     
     updateUsernameImage() {
@@ -447,25 +341,6 @@ class LockscreenManager {
         } while (this.gameImages[this.focusedGameIndex] === null); // Skip non-interactive tiles
     }
     
-    previousPin() {
-        this.focusedPinIndex = Math.max(0, this.focusedPinIndex - 1);
-    }
-    
-    nextPin() {
-        this.focusedPinIndex = Math.min(3, this.focusedPinIndex + 1);
-        
-        // Simulate PIN entry - when moving right, fill the previous dot
-        if (this.focusedPinIndex > this.pinInput.length) {
-            // Add a digit to simulate entry (using the position as the digit)
-            this.pinInput += (this.focusedPinIndex).toString();
-            this.updatePinDisplay();
-            
-            if (this.pinInput.length === 4) {
-                this.checkPin();
-            }
-        }
-    }
-
     previousAvatar() {
         this.focusedAvatarIndex = this.focusedAvatarIndex === 0 ? 1 : 0; // Toggle between 0 and 1
     }
@@ -483,66 +358,56 @@ class LockscreenManager {
         if (selectedTile.classList.contains('download-tile')) {
             this.showDownloadFeedback();
         }
-    }
-    
-    addPinDigit(digit) {
-        if (this.pinInput.length < 4) {
-            this.pinInput += digit;
-            this.updatePinDisplay();
-            
-            if (this.pinInput.length === 4) {
-                this.checkPin();
-            }
-        }
-    }
-    
-    addPinWithSpacebar() {
-        if (this.pinInput.length < 4) {
-            // Add a digit based on current focused pin position (1-4)
-            const digitToAdd = (this.focusedPinIndex + 1).toString();
-            this.pinInput += digitToAdd;
-            this.updatePinDisplay();
-            
-            // Move to next pin if not on the last one
-            if (this.focusedPinIndex < 3) {
-                this.focusedPinIndex++;
-                this.updateFocus();
-            }
-            
-            // Check PIN if we've filled all 4 digits
-            if (this.pinInput.length === 4) {
-                this.checkPin();
-            }
-        }
-    }
-    
-    removePinDigit() {
-        if (this.pinInput.length > 0) {
-            this.pinInput = this.pinInput.slice(0, -1);
-            this.updatePinDisplay();
-        }
-    }
-    
-    updatePinDisplay() {
-        this.pinDots.forEach((dot, index) => {
-            if (index < this.pinInput.length) {
-                dot.src = 'assets/lockscreen/pin_fill.png';
-            } else {
-                dot.src = 'assets/lockscreen/pin.png';
-            }
-        });
         
-        // Reapply focus state if PIN is currently focused
-        if (this.currentFocus === 'pin') {
-            this.updateFocus();
-        }
+        // For now, any game selection unlocks the device
+        this.unlockDevice();
     }
     
-    checkPin() {
-        if (this.pinInput === this.correctPin) {
+    startHolding() {
+        console.log('Started holding Y button');
+        this.isHolding = true;
+        this.holdStartTime = Date.now();
+        this.holdProgress = 0;
+        this.updateProgressBar();
+        this.animateHoldProgress();
+    }
+    
+    stopHolding() {
+        console.log('Stopped holding Y button');
+        this.isHolding = false;
+        if (this.holdAnimationFrame) {
+            cancelAnimationFrame(this.holdAnimationFrame);
+            this.holdAnimationFrame = null;
+        }
+        // Reset progress bar
+        this.holdProgress = 0;
+        this.updateProgressBar();
+    }
+    
+    animateHoldProgress() {
+        if (!this.isHolding) return;
+        
+        const elapsed = Date.now() - this.holdStartTime;
+        this.holdProgress = Math.min(elapsed / this.holdDuration, 1);
+        
+        this.updateProgressBar();
+        
+        if (this.holdProgress >= 1) {
+            // Hold complete - unlock device
+            console.log('Hold to unlock complete!');
             this.unlockDevice();
         } else {
-            this.showPinError();
+            // Continue animation
+            this.holdAnimationFrame = requestAnimationFrame(() => this.animateHoldProgress());
+        }
+    }
+    
+    updateProgressBar() {
+        if (this.holdProgressBar) {
+            const progressPercent = this.holdProgress * 100;
+            this.holdProgressBar.style.width = `${progressPercent}%`;
+            // Progress bar fill is always 100% opacity white
+            this.holdProgressBar.style.backgroundColor = `rgba(255, 255, 255, 1)`;
         }
     }
     
@@ -551,28 +416,23 @@ class LockscreenManager {
         // Clear global lockscreen flag
         window.lockscreenActive = false;
         
-        // Add unlock animation
-        this.lockscreenElement.style.opacity = '0';
-        this.lockscreenElement.style.transform = 'scale(1.1)';
+        // Set background to Halo when transitioning to main
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            // Clear any existing background classes
+            gameContainer.className = gameContainer.className.replace(/bg-\w+/g, '');
+            // Add Halo background class
+            gameContainer.classList.add('bg-halo');
+        }
         
-        setTimeout(() => {
-            this.lockscreenElement.style.display = 'none';
-            this.appElement.style.display = 'flex';
-        }, 500);
-    }
-    
-    showPinError() {
-        console.log('❌ Incorrect PIN');
-        // Add error animation
-        const pinSection = document.querySelector('.pin-section');
-        pinSection.style.animation = 'shake 0.5s ease-in-out';
+        // Simple immediate switch
+        this.lockscreenElement.style.display = 'none';
+        this.appElement.style.display = 'flex';
         
-        // Reset PIN after error
-        setTimeout(() => {
-            this.pinInput = '';
-            this.updatePinDisplay();
-            pinSection.style.animation = '';
-        }, 1000);
+        // Initialize main interface
+        if (window.initializeMain) {
+            window.initializeMain();
+        }
     }
     
     showDownloadFeedback() {
@@ -592,36 +452,12 @@ class LockscreenManager {
         this.updateUsernameImage();
         this.updateAvatarPosition();
         this.updateGameImages();
-        
-        // Handle PIN focus
-        this.pinDots.forEach(dot => dot.classList.remove('focused'));
-        if (this.currentFocus === 'pin') {
-            // Focus on the specific PIN index
-            if (this.pinDots[this.focusedPinIndex]) {
-                this.pinDots[this.focusedPinIndex].classList.add('focused');
-                this.pinDots[this.focusedPinIndex].src = 'assets/lockscreen/pin_focus.png';
-            }
-            
-            // Set other PIN dots to their appropriate states
-            this.pinDots.forEach((dot, index) => {
-                if (index !== this.focusedPinIndex) {
-                    if (index < this.pinInput.length) {
-                        dot.src = 'assets/lockscreen/pin_fill.png';
-                    } else {
-                        dot.src = 'assets/lockscreen/pin.png';
-                    }
-                }
-            });
-        } else {
-            // When not focused on PIN, show normal states
-            this.pinDots.forEach((dot, index) => {
-                if (index < this.pinInput.length) {
-                    dot.src = 'assets/lockscreen/pin_fill.png';
-                } else {
-                    dot.src = 'assets/lockscreen/pin.png';
-                }
-            });
-        }
+    }
+    
+    playLockscreenNavSound() {
+        // Silent navigation for lockscreen - nav.mp3 should only be used for main navigation bar
+        // Lockscreen uses its own visual feedback and doesn't need audio navigation sounds
+        return;
     }
     
     playNavSound() {
@@ -635,28 +471,7 @@ class LockscreenManager {
         }
     }
     
-    playSelectSound() {
-        // Play selection sound if available
-        console.log('Attempting to play carousel sound, window.carouselAudio:', !!window.carouselAudio);
-        if (window.carouselAudio) {
-            window.carouselAudio.currentTime = 0;
-            window.carouselAudio.play().catch(e => console.log('Audio play failed:', e));
-        } else {
-            console.log('carousel.mp3 audio not loaded');
-        }
-    }
 }
-
-// Add shake animation to CSS
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-10px); }
-        75% { transform: translateX(10px); }
-    }
-`;
-document.head.appendChild(style);
 
 // Initialize lockscreen when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -664,7 +479,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         window.lockscreenManager = new LockscreenManager();
         console.log('🔒 Lockscreen initialized');
-        console.log('Navigation: Arrow keys, Enter to select, Numbers for PIN');
-        console.log('Demo PIN: 1234');
+        console.log('Navigation: Arrow keys, Enter to select avatar or games to unlock');
     }, 100);
 });
